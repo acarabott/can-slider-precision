@@ -47,6 +47,7 @@ class Slider {
     this.isVert = type === 'vert';
     this.long = long;
     this.short = short;
+    this.handleDim = 40;
 
     this.valueMin = 0.0;
     this.valueMax = 1.0;
@@ -64,7 +65,7 @@ class Slider {
     this.ctx = this.canvas.getContext('2d');
     this.canvasHammer = new Hammer(this.canvas);
 
-    this.canvasHammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 0 });
+    this.canvasHammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
 
     this.canvasHammer.on('hammer.input', event => {
       this.render();
@@ -88,13 +89,20 @@ class Slider {
 
       this.render();
     });
+
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
         this.value = this.calculatePosition(event);
       }
       else {
+        const goodDirection = this.isVert ? Hammer.DIRECTION_VERTICAL : Hammer.DIRECTION_HORIZONTAL;
+        const goodMovement = (event.direction & goodDirection) !== 0;
         const point = this.getInputPoint(event.srcEvent);
-        if (!this.getHandleRect(this.shadowValue).contains(point)) {
+        const inShadowHandle = this.getHandleRect(this.shadowValue).contains(point);
+        if (goodMovement) {
+          this.shadowValue = this.calculatePosition(event);
+        }
+        else if (!inShadowHandle) {
           this.shadowActive = false;
         }
       }
@@ -102,8 +110,12 @@ class Slider {
     });
 
     this.canvasHammer.on('press', event => {
-      this.shadowValue = this.calculatePosition(event);
-      this.shadowActive = true;
+      const point = this.getInputPoint(event.srcEvent);
+      const inHandle = this.getHandleRect(this.value).contains(point);
+      if (!inHandle) {
+        this.shadowValue = this.calculatePosition(event);
+        this.shadowActive = true;
+      }
       this.render();
     });
   }
@@ -124,15 +136,14 @@ class Slider {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(value) {
+  getHandleRect(value, dimension = this.handleDim) {
     const inRange = this.valueMax - this.valueMin;
     const outRange = this.valueMax - this.valueMin;
-    const pos = ((value - this.valueMin) / inRange) * (outRange + this.valueMin);
-    const origDims = [this.short, 20];
+    const pos =  ((value - this.valueMin) / inRange) * (outRange + this.valueMin);
+    const origDims = [this.short, dimension];
     const tl = this.getOrientationValue([this.short * 0.5 - (origDims[0] / 2),
                                          this.long * pos - (origDims[1] / 2)]);
     const dims = this.getOrientationValue(origDims);
-
     return new Rect(...tl, ...dims);
   }
 
@@ -154,14 +165,21 @@ class Slider {
     }
 
     // handle
-    ctx.fillStyle = `rgba(43, 156, 212, ${this.active ? 1.0 : 0.5})`;
-    ctx.fillRect(...this.getHandleRect(this.value).drawRect());
+    {
+      const opacity = this.active ? 1.0 : 0.5;
+      ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
+      ctx.fillRect(...this.getHandleRect(this.value, this.handleDim).drawRect());
+
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+      ctx.fillRect(...this.getHandleRect(this.value, 2).drawRect());
+
+    }
 
     // shadow handle
     if (this.shadowActive) {
       ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
       ctx.setLineDash([5, 5]);
-      ctx.strokeRect(...this.getHandleRect(this.shadowValue).drawRect());
+      ctx.strokeRect(...this.getHandleRect(this.shadowValue, this.handleDim).drawRect());
     }
 
     ctx.restore();
