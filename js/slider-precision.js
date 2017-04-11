@@ -66,10 +66,9 @@ class Slider {
     this.canvasHammer.on('hammer.input', event => {
       this.render();
     });
-    this.canvasHammer.on('tap', event => {
+    this.canvasHammer.on('doubletap', event => {
+      this.value = this.calculatePosition(event);
     });
-
-    this.canvasHammer.on('panstart panend pancancel', event => {});
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const bb = event.target.getBoundingClientRect();
       const point = new Point(event.pageX - bb.left, event.pageY - bb.top);
