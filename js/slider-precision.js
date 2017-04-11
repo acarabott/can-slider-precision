@@ -79,7 +79,18 @@ class Slider {
     Hammer.on(this.canvas, 'mouseup touchend', event => {
       this.active = false;
       this.render();
-    })
+    });
+    this.canvasHammer.on('panmove', event => {
+      if (!this.active) { return; }
+      this.value = this.calculatePosition(event);
+    });
+  }
+
+  calculatePosition(event) {
+    const bb = event.target.getBoundingClientRect();
+    const longVal = this.isVert ? event.center.y - bb.top : event.center.x - bb.left;
+    const v = Math.min(Math.max(0, longVal), this.long);
+    return v / this.long;
   }
 
   getOrientationValue(twoOptions) {
@@ -90,7 +101,7 @@ class Slider {
     const inRange = this.valueMax - this.valueMin;
     const outRange = this.valueMax - this.valueMin;
     const pos = ((this.value - this.valueMin) / inRange) * (outRange + this.valueMin);
-    const origDims = [this.short, 8];
+    const origDims = [this.short, 20];
     const tl = this.getOrientationValue([this.short * 0.5 - (origDims[0] / 2),
                                          this.long * pos - (origDims[1] / 2)]);
     const dims = this.getOrientationValue(origDims);
