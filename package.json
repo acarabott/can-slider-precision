@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/acarabott/can-slider-precision/issues"
   },
-  "homepage": "https://github.com/acarabott/can-slider-precision#readme"
+  "homepage": "https://github.com/acarabott/can-slider-precision#readme",
+  "devDependencies": {
+    "hammerjs": "^2.0.8"
+  }
 }
