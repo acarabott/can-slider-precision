@@ -1,0 +1,28 @@
+body {
+  font-family: Lato, 'Helvetica Neue', Helvetica;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 200;
+}
+
+
+:root {
+  --my-blue: rgb(43, 156, 212);
+  --my-red: rgb(212, 100, 100);
+  --my-orange: rgb(249, 182, 118);
+  --my-green: rgb(43, 212, 156);
+}
+
+h1 {
+  text-align: center;
+}
+
+canvas {
+  border: 1px solid var(--my-blue);
+  width: 90vw;
+  height: 50vh;
+  margin: 5vh 5vw;
+}
