@@ -180,6 +180,8 @@ class Slider {
       ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
       ctx.setLineDash([5, 5]);
       ctx.strokeRect(...this.getHandleRect(this.shadowValue, this.handleDim).drawRect());
+      ctx.strokeStyle = `rgb(0,0,0)`;
+      ctx.strokeRect(...this.getHandleRect(this.shadowValue, 1).drawRect());
     }
 
     ctx.restore();
