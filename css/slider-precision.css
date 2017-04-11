@@ -22,7 +22,11 @@ h1 {
 
 canvas {
   border: 1px solid var(--my-blue);
-  width: 90vw;
-  height: 50vh;
-  margin: 5vh 5vw;
+  margin: 10px;
+}
+
+#container {
+  width: 80vw;
+  height: 60vh;
+  margin: 10vh 10vw;
 }
