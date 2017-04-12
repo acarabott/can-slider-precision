@@ -37,7 +37,7 @@ class Slider {
     this.isVert = type === 'vert';
     this.long = long;
     this.short = short;
-    this.shortExtra = short * 2;
+    this.shortExtra = short * 3;
     this.handleDim = 40;
 
     this.valueMin = 0.0;
@@ -127,19 +127,23 @@ class Slider {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(value, dimension = this.handleDim) {
+  getHandleRect(value, dimension = this.handleDim, extended = this.active) {
     const inRange = this.valueMax - this.valueMin;
     const outRange = this.valueMax - this.valueMin;
     const pos =  ((value - this.valueMin) / inRange) * (outRange + this.valueMin);
     const origDims = [this.short, dimension];
-    const tl = this.getOrientationValue([this.short * 0.5 - (origDims[0] / 2),
+    const tl = this.getOrientationValue([this.short * 1.5 - (origDims[0] / 2),
                                          this.long * pos - (origDims[1] / 2)]);
     const dims = this.getOrientationValue(origDims);
-    return new Rect(...tl, ...dims);
+    const rect = new Rect(...tl, ...dims);
+    return extended ? this.getExtendedRect(rect) : rect;
   }
 
   getExtendedRect(rect) {
-    rect.br[this.getOrientationValue(['x', 'y'])[0]] *= 2;
+    const dimension = this.getOrientationValue(['x', 'y'])[0];
+    const mul = 0.5;
+    rect.br[dimension] += this.short * mul;
+    rect.tl[dimension] -= this.short * mul;
     return rect;
   }
 
@@ -155,14 +159,17 @@ class Slider {
       // border
       ctx.strokeStyle = 'rgb(43, 156, 212)';
       ctx.lineWidth = 1;
-      ctx.strokeRect(1, 1, ...this.getOrientationValue([this.short - 2, this.long - 2]));
+      const xy = this.getOrientationValue([this.short, 0]);
+      const wh = this.getOrientationValue([this.short, this.long]);
+      ctx.strokeRect(...xy, ...wh);
     }
 
     // line
     {
       ctx.fillStyle = '#000';
-      const thickness = Math.max(1, this.short * 0.04);
-      const pos = this.short * 0.5 - (thickness / 2);
+      // const thickness = Math.max(1, this.short * 0.04);
+      const thickness = 1;
+      const pos = this.short * 1.5 - (thickness / 2);
       const xy = this.getOrientationValue([pos, 0]);
       const dims = this.getOrientationValue([thickness, this.long]);
       ctx.fillRect(...xy, ...dims);
@@ -174,13 +181,11 @@ class Slider {
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
 
       const handleRect = this.getHandleRect(this.value, this.handleDim);
-      const drawRect = (this.active ? this.getExtendedRect(handleRect) : handleRect).drawRect;
-      ctx.fillRect(...drawRect);
+      ctx.fillRect(...handleRect.drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
       const middleRect = this.getHandleRect(this.value, 2);
-      const middleDrawRect = (this.active ? this.getExtendedRect(middleRect) : middleRect).drawRect;
-      ctx.fillRect(...middleDrawRect);
+      ctx.fillRect(...middleRect.drawRect);
 
     }
 
@@ -188,14 +193,12 @@ class Slider {
     if (this.shadowActive) {
       ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
       ctx.setLineDash([5, 5]);
-      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim);
-      const direction = this.getOrientationValue(['x', 'y'])[0];
-      handleRect.br[direction] *= 2;
-
+      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, true);
       ctx.strokeRect(...handleRect.drawRect);
       ctx.strokeStyle = `rgb(0,0,0)`;
-      const middleRect = this.getHandleRect(this.shadowValue, 1);
-      middleRect.br[direction] *= 2;
+
+      const middleRect = this.getHandleRect(this.shadowValue, 1, true);
+
       ctx.beginPath();
       ctx.moveTo(...middleRect.tl);
       ctx.lineTo(...middleRect.br);
