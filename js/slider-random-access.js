@@ -94,7 +94,7 @@ class Slider {
         const goodDirection = this.isVert ? Hammer.DIRECTION_VERTICAL : Hammer.DIRECTION_HORIZONTAL;
         const goodMovement = (event.direction & goodDirection) !== 0;
         const point = this.getInputPoint(event.srcEvent);
-        const inShadowHandle = this.getHandleRect(this.shadowValue).contains(point);
+        const inShadowHandle = this.getHandleRect(this.shadowValue, this.handleDim, true).contains(point);
         if (goodMovement) {
           this.shadowValue = this.calculatePosition(event);
         }
