@@ -148,6 +148,11 @@ class Slider {
     return new Rect(...tl, ...dims);
   }
 
+  getExtendedRect(rect) {
+    rect.br[this.getOrientationValue(['x', 'y'])[0]] *= 2;
+    return rect;
+  }
+
   render() {
     const can = this.canvas;
     const ctx = this.ctx;
@@ -158,7 +163,6 @@ class Slider {
 
     {
       // border
-      // ctx.strokeStyle = 'rgb(130, 130, 130)';
       ctx.strokeStyle = 'rgb(43, 156, 212)';
       ctx.lineWidth = 1;
       ctx.strokeRect(1, 1, ...this.getOrientationValue([this.short - 2, this.long - 2]));
@@ -176,12 +180,17 @@ class Slider {
 
     // handle
     {
-      const opacity = this.active ? 1.0 : 0.5;
+      const opacity = this.active ? 0.8 : 0.5;
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
-      ctx.fillRect(...this.getHandleRect(this.value, this.handleDim).drawRect());
+
+      const handleRect = this.getHandleRect(this.value, this.handleDim);
+      const drawRect = (this.active ? this.getExtendedRect(handleRect) : handleRect).drawRect();
+      ctx.fillRect(...drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      ctx.fillRect(...this.getHandleRect(this.value, 2).drawRect());
+      const middleRect = this.getHandleRect(this.value, 2);
+      const middleDrawRect = (this.active ? this.getExtendedRect(middleRect) : middleRect).drawRect();
+      ctx.fillRect(...middleDrawRect);
 
     }
 
@@ -189,9 +198,14 @@ class Slider {
     if (this.shadowActive) {
       ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
       ctx.setLineDash([5, 5]);
-      ctx.strokeRect(...this.getHandleRect(this.shadowValue, this.handleDim).drawRect());
+      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim);
+      const direction = this.getOrientationValue(['x', 'y'])[0];
+      handleRect.br[direction] *= 2;
+
+      ctx.strokeRect(...handleRect.drawRect());
       ctx.strokeStyle = `rgb(0,0,0)`;
       const middleRect = this.getHandleRect(this.shadowValue, 1);
+      middleRect.br[direction] *= 2;
       ctx.beginPath();
       ctx.moveTo(...middleRect.tl);
       ctx.lineTo(...middleRect.br);
