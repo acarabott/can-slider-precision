@@ -1,5 +1,5 @@
 // prevent mobile scrolling
-document.ontouchmove = function(event){ event.preventDefault(); }
+document.ontouchmove = function(event){ event.preventDefault(); };
 
 class Point {
   constructor(x, y) {
