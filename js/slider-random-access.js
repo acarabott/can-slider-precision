@@ -189,18 +189,31 @@ class Slider {
 
     // shadow handle
     if (this.shadowActive) {
-      ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
-      ctx.setLineDash([5, 5]);
       const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, this.isTouch);
-      ctx.strokeRect(...handleRect.drawRect);
-      ctx.strokeStyle = `rgb(0,0,0)`;
-
       const middleRect = this.getHandleRect(this.shadowValue, 1, this.isTouch);
-
-      ctx.beginPath();
-      ctx.moveTo(...middleRect.tl);
-      ctx.lineTo(...middleRect.br);
-      ctx.stroke();
+      ctx.setLineDash([5, 5]);
+      [
+        { // horizontal border lines
+          style: `rgba(43, 156, 212, 1.0)`,
+          lines: [[handleRect.tl, handleRect.tr], [handleRect.bl, handleRect.br]]
+        },
+        { // vertical border lines
+          style: `rgba(212, 100, 100, 0.9)`,
+          lines: [[handleRect.tl, handleRect.bl], [handleRect.tr, handleRect.br]]
+        },
+        { // middle line
+          style: `rgba(0, 0, 0, 1.0)`,
+          lines: [[middleRect.tl, middleRect.tr]]
+        }
+      ].forEach(path => {
+        ctx.strokeStyle = path.style;
+        ctx.beginPath();
+        path.lines.forEach(line => {
+          ctx.moveTo(...line[0]);
+          ctx.lineTo(...line[1]);
+        });
+        ctx.stroke();
+      });
     }
 
     ctx.restore();
