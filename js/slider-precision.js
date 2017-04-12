@@ -7,13 +7,8 @@ class Point {
     this.y = y;
   }
 
-  gte(point) {
-    return this.x >= point.x && this.y >= point.y;
-  }
-
-  lte(point) {
-    return this.x <= point.x && this.y <= point.y;
-  }
+  gte(point) { return this.x >= point.x && this.y >= point.y; }
+  lte(point) { return this.x <= point.x && this.y <= point.y; }
 
   *[Symbol.iterator]() { yield this.x; yield this.y; }
 }
@@ -30,16 +25,11 @@ class Rect {
     }
   }
 
-  width() { return this.br.x - this.tl.x; }
-  height() { return this.br.y - this.tl.y; }
+  get width() { return this.br.x - this.tl.x; }
+  get height() { return this.br.y - this.tl.y; }
+  get drawRect() { return [...this.tl, this.width, this.height]; }
 
-  contains(point) {
-    return point.gte(this.tl) && point.lte(this.br);
-  }
-
-  drawRect() {
-    return [...this.tl, this.width(), this.height()];
-  }
+  contains(point) { return point.gte(this.tl) && point.lte(this.br); }
 }
 
 class Slider {
@@ -184,12 +174,12 @@ class Slider {
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
 
       const handleRect = this.getHandleRect(this.value, this.handleDim);
-      const drawRect = (this.active ? this.getExtendedRect(handleRect) : handleRect).drawRect();
+      const drawRect = (this.active ? this.getExtendedRect(handleRect) : handleRect).drawRect;
       ctx.fillRect(...drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
       const middleRect = this.getHandleRect(this.value, 2);
-      const middleDrawRect = (this.active ? this.getExtendedRect(middleRect) : middleRect).drawRect();
+      const middleDrawRect = (this.active ? this.getExtendedRect(middleRect) : middleRect).drawRect;
       ctx.fillRect(...middleDrawRect);
 
     }
@@ -202,7 +192,7 @@ class Slider {
       const direction = this.getOrientationValue(['x', 'y'])[0];
       handleRect.br[direction] *= 2;
 
-      ctx.strokeRect(...handleRect.drawRect());
+      ctx.strokeRect(...handleRect.drawRect);
       ctx.strokeStyle = `rgb(0,0,0)`;
       const middleRect = this.getHandleRect(this.shadowValue, 1);
       middleRect.br[direction] *= 2;
