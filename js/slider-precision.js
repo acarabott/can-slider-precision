@@ -47,6 +47,7 @@ class Slider {
     this.isVert = type === 'vert';
     this.long = long;
     this.short = short;
+    this.shortExtra = short * 2;
     this.handleDim = 40;
 
     this.valueMin = 0.0;
@@ -58,8 +59,8 @@ class Slider {
     this.active = false;
 
     this.canvas = document.createElement('canvas');
-    this.canvas.height = type === 'vert' ? long : short;
-    this.canvas.width = type === 'vert' ? short : long;
+    this.canvas.height = type === 'vert' ? this.long : this.shortExtra;
+    this.canvas.width = type === 'vert' ? this.shortExtra : this.long;
     this.canvas.style.cursor = 'pointer';
     this.canvas.style.userSelect = 'none';
     this.ctx = this.canvas.getContext('2d');
@@ -154,6 +155,15 @@ class Slider {
     ctx.clearRect(0, 0, can.width, can.height);
 
     ctx.save();
+
+    {
+      // border
+      // ctx.strokeStyle = 'rgb(130, 130, 130)';
+      ctx.strokeStyle = 'rgb(43, 156, 212)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(1, 1, ...this.getOrientationValue([this.short - 2, this.long - 2]));
+    }
+
     // line
     {
       ctx.fillStyle = '#000';
