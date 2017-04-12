@@ -120,7 +120,9 @@ class Slider {
 
   calculatePosition(event) {
     const bb = event.target.getBoundingClientRect();
-    const longVal = this.isVert ? event.center.y - bb.top : event.center.x - bb.left;
+    const x = event.hasOwnProperty('center') ? event.center.x : event.pageX;
+    const y = event.hasOwnProperty('center') ? event.center.y : event.pageY;
+    const longVal = this.isVert ? y - bb.top : x - bb.left;
     const v = Math.min(Math.max(0, longVal), this.long);
     return v / this.long;
   }
