@@ -191,24 +191,25 @@ class Slider {
     if (this.shadowActive) {
       const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, this.isTouch);
       const middleRect = this.getHandleRect(this.shadowValue, 1, this.isTouch);
+      const styles = this.getOrientationValue([`rgba(43, 156, 212, 1.0)`,`rgba(212, 100, 100, 0.9)`]);
       ctx.setLineDash([5, 5]);
       [
         { // horizontal border lines
-          style: `rgba(43, 156, 212, 1.0)`,
+          style: styles[0],
           lines: [[handleRect.tl, handleRect.tr], [handleRect.bl, handleRect.br]]
         },
         { // vertical border lines
-          style: `rgba(212, 100, 100, 0.9)`,
+          style: styles[1],
           lines: [[handleRect.tl, handleRect.bl], [handleRect.tr, handleRect.br]]
         },
         { // middle line
           style: `rgba(0, 0, 0, 1.0)`,
-          lines: [[middleRect.tl, middleRect.tr]]
+          lines: [[middleRect.tl, middleRect.br]]
         }
       ].forEach(path => {
         ctx.strokeStyle = path.style;
         ctx.beginPath();
-        path.lines.forEach(line => {
+        this.getOrientationValue(path.lines).forEach(line => {
           ctx.moveTo(...line[0]);
           ctx.lineTo(...line[1]);
         });
