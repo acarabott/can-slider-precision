@@ -192,7 +192,7 @@ class Slider {
       const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, this.isTouch);
       const middleRect = this.getHandleRect(this.shadowValue, 1, this.isTouch);
       const styles = this.getOrientationValue([`rgba(43, 156, 212, 1.0)`,`rgba(212, 100, 100, 0.9)`]);
-      ctx.setLineDash([5, 5]);
+      ctx.setLineDash([2, 2]);
       [
         { // horizontal border lines
           style: styles[0],
