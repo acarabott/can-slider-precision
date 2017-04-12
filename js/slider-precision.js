@@ -47,6 +47,7 @@ class Slider {
     this.shadowActive = false;
 
     this.active = false;
+    this.isTouch = false;
 
     this.canvas = document.createElement('canvas');
     this.canvas.height = type === 'vert' ? this.long : this.shortExtra;
@@ -59,6 +60,7 @@ class Slider {
     this.canvasHammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
 
     this.canvasHammer.on('hammer.input', event => {
+      this.isTouch = event.pointerType === 'touch';
       this.render();
     });
 
@@ -127,7 +129,7 @@ class Slider {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(value, dimension = this.handleDim, extended = this.active) {
+  getHandleRect(value, dimension = this.handleDim, extended = this.active && this.isTouch) {
     const inRange = this.valueMax - this.valueMin;
     const outRange = this.valueMax - this.valueMin;
     const pos =  ((value - this.valueMin) / inRange) * (outRange + this.valueMin);
@@ -193,11 +195,11 @@ class Slider {
     if (this.shadowActive) {
       ctx.strokeStyle = `rgba(43, 156, 212, 1.0)`;
       ctx.setLineDash([5, 5]);
-      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, true);
+      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, this.isTouch);
       ctx.strokeRect(...handleRect.drawRect);
       ctx.strokeStyle = `rgb(0,0,0)`;
 
-      const middleRect = this.getHandleRect(this.shadowValue, 1, true);
+      const middleRect = this.getHandleRect(this.shadowValue, 1, this.isTouch);
 
       ctx.beginPath();
       ctx.moveTo(...middleRect.tl);
