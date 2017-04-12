@@ -181,7 +181,11 @@ class Slider {
       ctx.setLineDash([5, 5]);
       ctx.strokeRect(...this.getHandleRect(this.shadowValue, this.handleDim).drawRect());
       ctx.strokeStyle = `rgb(0,0,0)`;
-      ctx.strokeRect(...this.getHandleRect(this.shadowValue, 1).drawRect());
+      const middleRect = this.getHandleRect(this.shadowValue, 1);
+      ctx.beginPath();
+      ctx.moveTo(...middleRect.tl);
+      ctx.lineTo(...middleRect.br);
+      ctx.stroke();
     }
 
     ctx.restore();
