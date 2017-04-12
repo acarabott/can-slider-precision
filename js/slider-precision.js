@@ -159,15 +159,6 @@ class Slider {
 
     ctx.save();
 
-    {
-      // border
-      ctx.strokeStyle = 'rgb(43, 156, 212)';
-      ctx.lineWidth = 1;
-      const xy = this.getOrientationValue([this.short, 0]);
-      const wh = this.getOrientationValue([this.short, this.long]);
-      ctx.strokeRect(...xy, ...wh);
-    }
-
     // line
     {
       ctx.fillStyle = '#000';
