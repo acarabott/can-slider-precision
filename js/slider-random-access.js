@@ -25,6 +25,9 @@ class Rect {
     }
   }
 
+  get tr() { return new Point(this.br.x, this.tl.y); }
+  get bl() { return new Point(this.tl.x, this.br.y); }
+
   get width() { return this.br.x - this.tl.x; }
   get height() { return this.br.y - this.tl.y; }
   get drawRect() { return [...this.tl, this.width, this.height]; }
