@@ -43,4 +43,31 @@ canvas {
 .output {
   display: block;
   margin: 20px auto;
+  border: 1px rgb(232, 232, 232) solid;
+}
+
+.slider-precision {
+  /*display: inline-block;*/
+}
+
+.buttons {
+  display: inline-block;
+  margin: 10px auto;
+  width: 100%;
+  text-align: center;
+}
+
+.buttons input {
+  margin: 5px;
+  border: 1px rgb(0, 0, 0) solid;
+  background-color: white;
+}
+
+.buttons input:active {
+  background-color: var(--my-blue);
+  color:white;
+}
+
+.buttons input:focus {
+  outline: none;
 }
