@@ -186,6 +186,10 @@ const horz = new SliderPrecision('horz');
 horz.appendTo(box);
 createOutput(horz, box);
 
+document.addEventListener('contextmenu', event => {
+  event.preventDefault();
+});
+
 // approaches
 // 1. modifier keys
 // 2. vertical slider
