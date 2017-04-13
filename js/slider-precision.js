@@ -112,7 +112,7 @@ class SliderPrecision {
 
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
-        this.valueNorm = this.calculatePosition(event);
+        this.valueNorm = this.calculateValueNorm(event);
         this.updateOutput();
       }
       this.render();
@@ -127,11 +127,11 @@ class SliderPrecision {
     return new Point(event.clientX - bb.left, event.clientY - bb.top);
   }
 
-  calculatePosition(event) {
+  calculateValueNorm(event) {
     const bb = event.target.getBoundingClientRect();
     const x = event.hasOwnProperty('center') ? event.center.x : event.pageX;
     const y = event.hasOwnProperty('center') ? event.center.y : event.pageY;
-    const longVal = this.isVert ? y - bb.top : x - bb.left;
+    const longVal = this.getOrientationValue([this.long - (y - bb.top) , x - bb.left])[0];
     const v = Math.min(Math.max(0, longVal), this.long);
     return v / this.long;
   }
@@ -140,13 +140,12 @@ class SliderPrecision {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(valueNorm, dimension = this.handleDim, extended = this.active && this.isTouch) {
+  getHandleRect(valueNorm, dimension = this.handleDim) {
     const origDims = [this.short, dimension];
+    const norm = this.getOrientationValue([1.0 - valueNorm, valueNorm])[0];
     const tl = this.getOrientationValue([this.short * 1.5 - (origDims[0] / 2),
-                                         this.long * valueNorm - (origDims[1] / 2)]);
-    const dims = this.getOrientationValue(origDims);
-    const rect = new Rect(...tl, ...dims);
-    return extended ? this.getExtendedRect(rect) : rect;
+                                         this.long * norm - (origDims[1] / 2)]);
+    return  new Rect(...tl, ...this.getOrientationValue(origDims));
   }
 
   get value() {
