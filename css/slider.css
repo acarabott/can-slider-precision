@@ -37,6 +37,10 @@ canvas {
 
 #container {
   width: 300px;
-  height: 60vh;
   margin: 5vh auto;
+}
+
+.output {
+  display: block;
+  margin: 20px auto;
 }

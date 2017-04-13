@@ -81,6 +81,7 @@ class SliderPrecision {
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
         this.value = this.calculatePosition(event);
+        this.updateValue();
       }
       this.render();
     });
@@ -154,19 +155,36 @@ class SliderPrecision {
     ctx.restore();
   }
 
+  updateValue() {
+    if (this.output !== undefined) { this.output.value = this.value; }
+  }
+
   appendTo(domNode) {
     domNode.appendChild(this.canvas);
     this.render();
   }
 
+  setOutput(domNode) {
+    this.output = domNode;
+    this.updateValue();
+  }
+}
+
+function createOutput(input, parent = document.body) {
+  const output = document.createElement('input');
+  output.classList.add('output');
+  parent.appendChild(output);
+  input.setOutput(output);
 }
 
 const box = document.getElementById('container');
 const vert = new SliderPrecision('vert');
 vert.appendTo(box);
+createOutput(vert, box);
 
 const horz = new SliderPrecision('horz');
 horz.appendTo(box);
+createOutput(horz, box);
 
 // approaches
 // 1. modifier keys
