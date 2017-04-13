@@ -57,6 +57,9 @@ canvas {
   margin: 5px;
   border: 1px rgb(0, 0, 0) solid;
   background-color: white;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  padding: 5px;
 }
 
 .buttons input:active, .buttons input.active {
