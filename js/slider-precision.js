@@ -91,7 +91,7 @@ class SliderPrecision {
 
   getInputPoint(event) {
     const bb = event.target.getBoundingClientRect();
-    return new Point(event.pageX - bb.left, event.pageY - bb.top);
+    return new Point(event.clientX - bb.left, event.clientY - bb.top);
   }
 
   calculatePosition(event) {
