@@ -46,10 +46,6 @@ canvas {
   border: 1px rgb(232, 232, 232) solid;
 }
 
-.slider-precision {
-  /*display: inline-block;*/
-}
-
 .buttons {
   display: inline-block;
   margin: 10px auto;
