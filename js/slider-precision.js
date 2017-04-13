@@ -35,6 +35,47 @@ class Rect {
   contains(point) { return point.gte(this.tl) && point.lte(this.br); }
 }
 
+class ModKey {
+  constructor(key, value, unicode) {
+    this.key = key;
+    this.value = value;
+    this.time = Date.now();
+    this.button = document.createElement('input');
+    this.button.type = 'button';
+    this.button.value = unicode;
+    this.active = false;
+    this.down = false;
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== this.key) { return; }
+
+      this.down = true;
+      this.time = Date.now();
+      this.activate();
+    });
+
+    document.addEventListener('keyup', event => {
+      if (event.key !== this.key) { return; }
+
+      this.down = false;
+      this.time = Date.now();
+      this.deactivate();
+    });
+  }
+
+  activate() {
+    this.active = true;
+    this.button.classList.add('active');
+  }
+
+  deactivate() {
+    this.active = false;
+    this.button.classList.remove('active');
+  }
+
+  toggleActive() { this.active ? this.deactivate() : this.activate(); }
+}
+
 class SliderPrecision {
   constructor(type = 'vert', long = 300, short = 50) {
     this.isVert = type === 'vert';
@@ -64,48 +105,39 @@ class SliderPrecision {
     this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
     this.precisionMod = 0;
-    this.modKeys = {
-      Control: { mod: 1, down: false, time: Date.now(), unicode: '\u2303', button: undefined },
-      Alt:     { mod: 2, down: false, time: Date.now(), unicode: '\u2325', button: undefined },
-      Meta:    { mod: 3, down: false, time: Date.now(), unicode: '\u2318', button: undefined }
-    };
+    this.modKeys = {};
 
-    {
-      const buttons = document.createElement('div');
-      buttons.classList.add('buttons');
-      this.container.appendChild(buttons);
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('buttons');
+    this.container.appendChild(buttonContainer);
 
-      Object.keys(this.modKeys).forEach(key => {
-        const button = document.createElement('input');
-        this.modKeys[key].button = button;
-        button.type = 'button';
-        button.value = this.modKeys[key].unicode;
-        buttons.appendChild(button);
-      });
-    }
+    [
+      { key: 'Control', mod: 1, unicode: '\u2303' },
+      { key:     'Alt', mod: 2, unicode: '\u2325' },
+      { key:    'Meta', mod: 3, unicode: '\u2318' }
+    ].forEach(o => {
+      const mk = new ModKey(o.key, o.mod, o.unicode);
+      this.modKeys[o.key] = mk;
+      buttonContainer.appendChild(mk.button);
+    });
 
     document.addEventListener('keydown', event => {
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
 
-      const modKey = this.modKeys[event.key];
-      modKey.down = true;
-      modKey.time = Date.now();
-      this.precisionMod = modKey.mod;
-      modKey.button.classList.add('active');
+      this.precisionMod = this.modKeys[event.key].value;
+      Object.keys(this.modKeys).forEach(k => {
+        if (k !== event.key) { this.modKeys[k].deactivate(); }
+      });
     });
 
     document.addEventListener('keyup', event => {
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
 
-      const modKey = this.modKeys[event.key];
-      modKey.down = false;
-      modKey.time = Date.now();
-      modKey.button.classList.remove('active');
-
       const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
       const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
       const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
-      this.precisionMod = latest === undefined ? 0 : this.modKeys[latest].mod;
+      if (latest !== undefined) { this.modKeys[latest].activate(); }
+      this.precisionMod = latest === undefined ? 0 : this.modKeys[latest].value;
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
