@@ -1,5 +1,5 @@
 {
-  "name": "can-slider-NAME",
+  "name": "can-slider-precision",
   "version": "1.0.0",
   "description": "",
   "main": "index.html",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/acarabott/can-slider-NAME.git"
+    "url": "git+https://github.com/acarabott/can-slider-precision.git"
   },
   "author": "Arthur Carabott",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/acarabott/can-slider-NAME/issues"
+    "url": "https://github.com/acarabott/can-slider-precision/issues"
   },
-  "homepage": "https://github.com/acarabott/can-slider-NAME#readme",
+  "homepage": "https://github.com/acarabott/can-slider-precision#readme",
   "devDependencies": {
     "hammerjs": "^2.0.8"
   }

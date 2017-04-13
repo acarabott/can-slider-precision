@@ -35,7 +35,7 @@ class Rect {
   contains(point) { return point.gte(this.tl) && point.lte(this.br); }
 }
 
-class Slider {
+class SliderPrecision {
   constructor(type = 'vert', long = 300, short = 50) {
     this.isVert = type === 'vert';
     this.long = long;
@@ -162,10 +162,10 @@ class Slider {
 }
 
 const box = document.getElementById('container');
-const vert = new Slider('vert');
+const vert = new SliderPrecision('vert');
 vert.appendTo(box);
 
-const horz = new Slider('horz');
+const horz = new SliderPrecision('horz');
 horz.appendTo(box);
 
 // approaches
