@@ -43,9 +43,10 @@ class SliderPrecision {
     this.shortExtra = short * 3;
     this.handleDim = 40;
 
-    this.valueMin = 0.0;
-    this.valueMax = 1.0;
-    this.value = 0.5;
+    this._valueMin = 0.0;
+    this._valueMax = 1.0;
+    this.valueNorm = 0.5;
+    this.step = 0.1;
 
     this.active = false;
     this.isTouch = false;
@@ -60,9 +61,38 @@ class SliderPrecision {
 
     this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
+    this.steps = { None: 0, Control: 1, Alt: 2, Meta: 3 };
+    this.step = this.steps.None;
+
+    this.modKeys = {
+      Control: { down: false, time: Date.now() },
+      Alt: { down: false, time: Date.now() },
+      Meta: { down: false, time: Date.now() }
+    };
+
+    document.addEventListener('keydown', event => {
+      event.preventDefault();
+      if (this.modKeys.hasOwnProperty(event.key)) {
+        this.modKeys[event.key].down = true;
+        this.modKeys[event.key].time = Date.now();
+      }
+      this.step = this.steps[event.key];
+    });
+
+    document.addEventListener('keyup', event => {
+      if (this.modKeys.hasOwnProperty(event.key)) {
+        this.modKeys[event.key].down = false;
+        this.modKeys[event.key].time = Date.now();
+      }
+      const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
+      const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
+      const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
+      this.step = this.steps[latest === undefined ? 'None' : latest];
+    });
+
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const point = this.getInputPoint(event);
-      this.active = this.getHandleRect(this.value).contains(point);
+      this.active = this.getHandleRect(this.valueNorm).contains(point);
       this.render();
     });
 
@@ -82,8 +112,8 @@ class SliderPrecision {
 
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
-        this.value = this.calculatePosition(event);
-        this.updateValue();
+        this.valueNorm = this.calculatePosition(event);
+        this.updateOutput();
       }
       this.render();
     });
@@ -110,16 +140,29 @@ class SliderPrecision {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(value, dimension = this.handleDim, extended = this.active && this.isTouch) {
-    const inRange = this.valueMax - this.valueMin;
-    const outRange = this.valueMax - this.valueMin;
-    const pos =  ((value - this.valueMin) / inRange) * (outRange + this.valueMin);
+  getHandleRect(valueNorm, dimension = this.handleDim, extended = this.active && this.isTouch) {
     const origDims = [this.short, dimension];
     const tl = this.getOrientationValue([this.short * 1.5 - (origDims[0] / 2),
-                                         this.long * pos - (origDims[1] / 2)]);
+                                         this.long * valueNorm - (origDims[1] / 2)]);
     const dims = this.getOrientationValue(origDims);
     const rect = new Rect(...tl, ...dims);
     return extended ? this.getExtendedRect(rect) : rect;
+  }
+
+  get value() {
+    const outputRange = this._valueMax - this._valueMin;
+    const scaled = (this._valueMin + (this.valueNorm * outputRange));
+    return parseFloat(scaled.toFixed(this.step), 10);
+  }
+
+  set valueMin(v) {
+    this._valueMin = v;
+    this.updateOutput();
+  }
+
+  set valueMax(v) {
+    this._valueMax = v;
+    this.updateOutput();
   }
 
   render() {
@@ -145,11 +188,11 @@ class SliderPrecision {
       const opacity = this.active ? 0.8 : 0.5;
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
 
-      const handleRect = this.getHandleRect(this.value, this.handleDim);
+      const handleRect = this.getHandleRect(this.valueNorm, this.handleDim);
       ctx.fillRect(...handleRect.drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      const middleRect = this.getHandleRect(this.value, 2);
+      const middleRect = this.getHandleRect(this.valueNorm, 2);
       ctx.fillRect(...middleRect.drawRect);
 
     }
@@ -157,7 +200,7 @@ class SliderPrecision {
     ctx.restore();
   }
 
-  updateValue() {
+  updateOutput() {
     if (this.output !== undefined) { this.output.value = this.value; }
   }
 
@@ -168,7 +211,7 @@ class SliderPrecision {
 
   setOutput(domNode) {
     this.output = domNode;
-    this.updateValue();
+    this.updateOutput();
   }
 }
 
@@ -181,6 +224,8 @@ function createOutput(input, parent = document.body) {
 
 const box = document.getElementById('container');
 const vert = new SliderPrecision('vert');
+vert.valueMin = 0;
+vert.valueMax = 10;
 vert.appendTo(box);
 createOutput(vert, box);
 
