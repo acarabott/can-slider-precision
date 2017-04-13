@@ -176,7 +176,7 @@ class SliderPrecision {
     const norm = this.getOrientationValue([1.0 - valueNorm, valueNorm])[0];
     const tl = this.getOrientationValue([this.short * 1.5 - (origDims[0] / 2),
                                          this.long * norm - (origDims[1] / 2)]);
-    return  new Rect(...tl, ...this.getOrientationValue(origDims));
+    return new Rect(...tl, ...this.getOrientationValue(origDims));
   }
 
   get precision() {
