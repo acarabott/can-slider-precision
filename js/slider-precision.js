@@ -85,7 +85,6 @@ class SliderPrecision {
     }
 
     document.addEventListener('keydown', event => {
-      event.preventDefault();
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
 
       const modKey = this.modKeys[event.key];
