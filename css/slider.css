@@ -63,9 +63,10 @@ canvas {
   background-color: white;
 }
 
-.buttons input:active {
+.buttons input:active, .buttons input.active {
   background-color: var(--my-blue);
   color:white;
+  border-color: var(--my-blue);
 }
 
 .buttons input:focus {

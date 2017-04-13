@@ -74,8 +74,10 @@ class SliderPrecision {
       const buttons = document.createElement('div');
       buttons.classList.add('buttons');
       this.container.appendChild(buttons);
+
       Object.keys(this.modKeys).forEach(key => {
         const button = document.createElement('input');
+        this.modKeys[key].button = button;
         button.type = 'button';
         button.value = this.modKeys[key].unicode;
         buttons.appendChild(button);
@@ -85,17 +87,22 @@ class SliderPrecision {
     document.addEventListener('keydown', event => {
       event.preventDefault();
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
+
       const modKey = this.modKeys[event.key];
       modKey.down = true;
       modKey.time = Date.now();
       this.precisionMod = modKey.mod;
+      modKey.button.classList.add('active');
     });
 
     document.addEventListener('keyup', event => {
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
 
-      this.modKeys[event.key].down = false;
-      this.modKeys[event.key].time = Date.now();
+      const modKey = this.modKeys[event.key];
+      modKey.down = false;
+      modKey.time = Date.now();
+      modKey.button.classList.remove('active');
+
       const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
       const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
       const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
