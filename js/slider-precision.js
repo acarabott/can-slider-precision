@@ -36,13 +36,14 @@ class Rect {
 }
 
 class ModKey {
-  constructor(key, value, unicode) {
+  constructor(key, modValue, unicode, text) {
     this.key = key;
-    this.value = value;
+    this.modValue = modValue;
+    this.unicode = unicode;
     this.time = Date.now();
     this.button = document.createElement('input');
     this.button.type = 'button';
-    this.button.value = unicode;
+    this.text = text;
     this.active = false;
     this.down = false;
 
@@ -74,9 +75,20 @@ class ModKey {
   }
 
   toggleActive() { this.active ? this.deactivate() : this.activate(); }
+
+  set text(value) {
+    this.button.value = `${this.unicode} ${value}`;
+  }
 }
 
 class SliderPrecision {
+  static getStepString(precision) {
+    const zeroCount = Math.abs(precision);
+    return zeroCount === 0 ? '1' : precision < 0
+      ? `1${'0'.repeat(zeroCount)}`
+      : `0.${'0'.repeat(zeroCount - 1)}1`;
+  }
+
   constructor(type = 'vert', long = 300, short = 50) {
     this.isVert = type === 'vert';
     this.long = long;
@@ -107,24 +119,27 @@ class SliderPrecision {
     this.precisionMod = 0;
     this.modKeys = {};
 
-    const buttonContainer = document.createElement('div');
-    buttonContainer.classList.add('buttons');
-    this.container.appendChild(buttonContainer);
+    this.buttonContainer = document.createElement('div');
+    this.buttonContainer.classList.add('buttons');
+    this.container.appendChild(this.buttonContainer);
 
     [
-      { key: 'Control', mod: 1, unicode: '\u2303' },
-      { key:     'Alt', mod: 2, unicode: '\u2325' },
-      { key:    'Meta', mod: 3, unicode: '\u2318' }
+      { key: 'default', mod: 0, unicode: '' },
+      // { key: 'Control', mod: 0, unicode: '\u2303' },
+      { key:     'Alt', mod: 1, unicode: '\u2325' },
+      { key:    'Meta', mod: 2, unicode: '\u2318' }
     ].forEach(o => {
-      const mk = new ModKey(o.key, o.mod, o.unicode);
+      const step = this.getButtonStep(o.mod);
+      const mk = new ModKey(o.key, o.mod, o.unicode, step);
       this.modKeys[o.key] = mk;
-      buttonContainer.appendChild(mk.button);
+      this.buttonContainer.appendChild(mk.button);
+      if (o.key === 'default') { mk.activate(); }
     });
 
     document.addEventListener('keydown', event => {
       if (!this.modKeys.hasOwnProperty(event.key)) { return; }
 
-      this.precisionMod = this.modKeys[event.key].value;
+      this.precisionMod = this.modKeys[event.key].modValue;
       Object.keys(this.modKeys).forEach(k => {
         if (k !== event.key) { this.modKeys[k].deactivate(); }
       });
@@ -136,12 +151,15 @@ class SliderPrecision {
       const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
       const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
       const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
-      if (latest !== undefined) { this.modKeys[latest].activate(); }
-      this.precisionMod = latest === undefined ? 0 : this.modKeys[latest].value;
+      const toActivate = this.modKeys[latest === undefined ? 'default' : latest];
+
+      toActivate.activate();
+      this.precisionMod = toActivate.modValue;
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
-      const point = this.getInputPoint(event);
+      const getFrom = event.type === 'touchstart' ? event.touches[0] : event;
+      const point = this.getInputPoint(getFrom);
       this.active = this.getHandleRect(this.valueNorm).contains(point);
       this.render();
     });
@@ -172,9 +190,16 @@ class SliderPrecision {
     this.canvasHammer.on('doubletap', event => {});
   }
 
-  calculatePrecision() {
-    const thing = Math.ceil(Math.log10(this._valueMax - this._valueMin));
-    return 1 - thing;
+  getButtonStep(modValue) {
+    return SliderPrecision.getStepString(this.getPrecision() + modValue);
+  }
+
+  updateButtonText(modKey) {
+    modKey.text = this.getButtonStep(modKey.modValue);
+  }
+
+  updateAllButtonsText() {
+    Object.keys(this.modKeys).forEach(modKey => this.updateButtonText(this.modKeys[modKey]));
   }
 
   round(number, precision = 0) {
@@ -210,28 +235,34 @@ class SliderPrecision {
     return new Rect(...tl, ...this.getOrientationValue(origDims));
   }
 
-  get precision() {
-    return 1 - Math.floor(Math.log10(this._valueMax - this._valueMin)) + this.precisionMod;
+  getPrecision(mod = 0) {
+    return 1 - Math.floor(Math.log10(this._valueMax - this._valueMin)) + mod;
+  }
+
+  get precisionRounding() {
+    return this.getPrecision(this.precisionMod);
   }
 
   get value() {
     const outputRange = this._valueMax - this._valueMin;
     const scaled = (this._valueMin + (this.valueNorm * outputRange));
-    return this.round(scaled, this.precision);
+    return this.round(scaled, this.precisionRounding);
   }
 
   get valueRender() {
-    return this.value.toFixed(Math.max(0, this.precision));
+    return this.value.toFixed(Math.max(0, this.precisionRounding));
   }
 
   set valueMin(v) {
     this._valueMin = v;
     this.updateOutput();
+    this.updateAllButtonsText();
   }
 
   set valueMax(v) {
     this._valueMax = v;
     this.updateOutput();
+    this.updateAllButtonsText();
   }
 
   render() {
@@ -292,9 +323,11 @@ function createOutput(input, parent = document.body) {
 }
 
 const box = document.getElementById('container');
+
 const vert = new SliderPrecision('vert');
+
 vert.valueMin = 0;
-vert.valueMax = 10;
+vert.valueMax = 100;
 vert.appendTo(box);
 createOutput(vert, box);
 
