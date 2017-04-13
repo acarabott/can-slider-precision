@@ -46,7 +46,6 @@ class SliderPrecision {
     this._valueMin = 0.0;
     this._valueMax = 1.0;
     this.valueNorm = 0.5;
-    this.step = 0.1;
 
     this.active = false;
     this.isTouch = false;
@@ -61,33 +60,33 @@ class SliderPrecision {
 
     this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-    this.steps = { None: 0, Control: 1, Alt: 2, Meta: 3 };
-    this.step = this.steps.None;
+    this.precisionMods = { None: 0, Control: 1, Alt: 2, Meta: 3 };
+    this.precisionMod = this.precisionMods.None;
 
     this.modKeys = {
       Control: { down: false, time: Date.now() },
-      Alt: { down: false, time: Date.now() },
-      Meta: { down: false, time: Date.now() }
+      Alt:     { down: false, time: Date.now() },
+      Meta:    { down: false, time: Date.now() }
     };
 
     document.addEventListener('keydown', event => {
       event.preventDefault();
-      if (this.modKeys.hasOwnProperty(event.key)) {
-        this.modKeys[event.key].down = true;
-        this.modKeys[event.key].time = Date.now();
-      }
-      this.step = this.steps[event.key];
+      if (!this.modKeys.hasOwnProperty(event.key)) { return; }
+
+      this.modKeys[event.key].down = true;
+      this.modKeys[event.key].time = Date.now();
+      this.precisionMod = this.precisionMods[event.key];
     });
 
     document.addEventListener('keyup', event => {
-      if (this.modKeys.hasOwnProperty(event.key)) {
-        this.modKeys[event.key].down = false;
-        this.modKeys[event.key].time = Date.now();
-      }
+      if (!this.modKeys.hasOwnProperty(event.key)) { return; }
+
+      this.modKeys[event.key].down = false;
+      this.modKeys[event.key].time = Date.now();
       const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
       const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
       const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
-      this.step = this.steps[latest === undefined ? 'None' : latest];
+      this.precisionMod = this.precisionMods[latest === undefined ? 'None' : latest];
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
@@ -122,6 +121,18 @@ class SliderPrecision {
     this.canvasHammer.on('doubletap', event => {});
   }
 
+  calculatePrecision() {
+    const thing = Math.ceil(Math.log10(this._valueMax - this._valueMin));
+    return 1 - thing;
+  }
+
+  round(number, precision = 0) {
+    const factor = Math.pow(10, precision);
+    const tempNumber = number * factor;
+    const roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+  }
+
   getInputPoint(event) {
     const bb = event.target.getBoundingClientRect();
     return new Point(event.clientX - bb.left, event.clientY - bb.top);
@@ -148,10 +159,18 @@ class SliderPrecision {
     return  new Rect(...tl, ...this.getOrientationValue(origDims));
   }
 
+  get precision() {
+    return 1 - Math.floor(Math.log10(this._valueMax - this._valueMin)) + this.precisionMod;
+  }
+
   get value() {
     const outputRange = this._valueMax - this._valueMin;
     const scaled = (this._valueMin + (this.valueNorm * outputRange));
-    return parseFloat(scaled.toFixed(this.step), 10);
+    return this.round(scaled, this.precision);
+  }
+
+  get valueRender() {
+    return this.value.toFixed(this.precision);
   }
 
   set valueMin(v) {
@@ -200,7 +219,7 @@ class SliderPrecision {
   }
 
   updateOutput() {
-    if (this.output !== undefined) { this.output.value = this.value; }
+    if (this.output !== undefined) { this.output.value = this.valueRender; }
   }
 
   appendTo(domNode) {
