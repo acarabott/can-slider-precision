@@ -46,8 +46,6 @@ class Slider {
     this.valueMin = 0.0;
     this.valueMax = 1.0;
     this.value = 0.5;
-    this.shadowValue = 0.5;
-    this.shadowActive = false;
 
     this.active = false;
     this.isTouch = false;
@@ -60,60 +58,35 @@ class Slider {
     this.ctx = this.canvas.getContext('2d');
     this.canvasHammer = new Hammer(this.canvas);
 
-    this.canvasHammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
+    Hammer.on(this.canvas, 'mousedown touchstart', event => {
+      const point = this.getInputPoint(event);
+      this.active = this.getHandleRect(this.value).contains(point);
+      this.render();
+    });
+
+    Hammer.on(this.canvas, 'mouseup touchend', event => {
+      this.active = false;
+      this.render();
+    });
 
     this.canvasHammer.on('hammer.input', event => {
       this.isTouch = event.pointerType === 'touch';
       this.render();
     });
 
-    this.canvasHammer.on('doubletap', event => {
-      this.value = this.calculatePosition(event);
-    });
-
-    Hammer.on(this.canvas, 'mousedown touchstart', event => {
-      const point = this.getInputPoint(event);
-      this.active = this.getHandleRect(this.value).contains(point);
-      this.render();
-    });
-    Hammer.on(this.canvas, 'mouseup touchend', event => {
-      this.active = false;
-      if (this.shadowActive) {
-        this.value = this.shadowValue;
-        this.shadowActive = false;
-      }
-
-      this.render();
+    this.canvasHammer.get('pan').set({
+      direction: Hammer.DIRECTION_ALL, threshold: 10
     });
 
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
         this.value = this.calculatePosition(event);
       }
-      else {
-        const goodDirection = this.isVert ? Hammer.DIRECTION_VERTICAL : Hammer.DIRECTION_HORIZONTAL;
-        const goodMovement = (event.direction & goodDirection) !== 0;
-        const point = this.getInputPoint(event.srcEvent);
-        const inShadowHandle = this.getHandleRect(this.shadowValue, this.handleDim, true).contains(point);
-        if (goodMovement) {
-          this.shadowValue = this.calculatePosition(event);
-        }
-        else if (!inShadowHandle) {
-          this.shadowActive = false;
-        }
-      }
       this.render();
     });
 
-    this.canvasHammer.on('press', event => {
-      const point = this.getInputPoint(event.srcEvent);
-      const inHandle = this.getHandleRect(this.value).contains(point);
-      if (!inHandle) {
-        this.shadowValue = this.calculatePosition(event);
-        this.shadowActive = true;
-      }
-      this.render();
-    });
+    this.canvasHammer.on('press', event => {});
+    this.canvasHammer.on('doubletap', event => {});
   }
 
   getInputPoint(event) {
@@ -146,14 +119,6 @@ class Slider {
     return extended ? this.getExtendedRect(rect) : rect;
   }
 
-  getExtendedRect(rect) {
-    const dimension = this.getOrientationValue(['x', 'y'])[0];
-    const mul = 0.5;
-    rect.br[dimension] += this.short * mul;
-    rect.tl[dimension] -= this.short * mul;
-    return rect;
-  }
-
   render() {
     const can = this.canvas;
     const ctx = this.ctx;
@@ -165,7 +130,6 @@ class Slider {
     // line
     {
       ctx.fillStyle = '#000';
-      // const thickness = Math.max(1, this.short * 0.04);
       const thickness = 1;
       const pos = this.short * 1.5 - (thickness / 2);
       const xy = this.getOrientationValue([pos, 0]);
@@ -187,36 +151,6 @@ class Slider {
 
     }
 
-    // shadow handle
-    if (this.shadowActive) {
-      const handleRect = this.getHandleRect(this.shadowValue, this.handleDim, this.isTouch);
-      const middleRect = this.getHandleRect(this.shadowValue, 1, this.isTouch);
-      const styles = this.getOrientationValue([`rgba(43, 156, 212, 1.0)`,`rgba(212, 100, 100, 0.9)`]);
-      ctx.setLineDash([2, 2]);
-      [
-        { // horizontal border lines
-          style: styles[0],
-          lines: [[handleRect.tl, handleRect.tr], [handleRect.bl, handleRect.br]]
-        },
-        { // vertical border lines
-          style: styles[1],
-          lines: [[handleRect.tl, handleRect.bl], [handleRect.tr, handleRect.br]]
-        },
-        { // middle line
-          style: `rgba(0, 0, 0, 1.0)`,
-          lines: [[middleRect.tl, middleRect.br]]
-        }
-      ].forEach(path => {
-        ctx.strokeStyle = path.style;
-        ctx.beginPath();
-        this.getOrientationValue(path.lines).forEach(line => {
-          ctx.moveTo(...line[0]);
-          ctx.lineTo(...line[1]);
-        });
-        ctx.stroke();
-      });
-    }
-
     ctx.restore();
   }
 
@@ -233,7 +167,6 @@ vert.appendTo(box);
 
 const horz = new Slider('horz');
 horz.appendTo(box);
-
 
 // approaches
 // 1. modifier keys
