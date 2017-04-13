@@ -106,7 +106,7 @@ class SliderPrecision {
       const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
       const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
       const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
-      this.precisionMon = latest === undefined ? 0 : this.modKeys[latest];
+      this.precisionMod = latest === undefined ? 0 : this.modKeys[latest].mod;
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
