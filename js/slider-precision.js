@@ -190,7 +190,7 @@ class SliderPrecision {
   }
 
   get valueRender() {
-    return this.value.toFixed(this.precision);
+    return this.value.toFixed(Math.max(0, this.precision));
   }
 
   set valueMin(v) {
