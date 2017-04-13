@@ -58,6 +58,8 @@ class SliderPrecision {
     this.ctx = this.canvas.getContext('2d');
     this.canvasHammer = new Hammer(this.canvas);
 
+    this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const point = this.getInputPoint(event);
       this.active = this.getHandleRect(this.value).contains(point);
@@ -186,9 +188,6 @@ const horz = new SliderPrecision('horz');
 horz.appendTo(box);
 createOutput(horz, box);
 
-document.addEventListener('contextmenu', event => {
-  event.preventDefault();
-});
 
 // approaches
 // 1. modifier keys
