@@ -36,48 +36,89 @@ class Rect {
 }
 
 class ModKey {
-  constructor(key, modValue, unicode, text) {
+  constructor(key, modValue, unicode, step, width, height) {
     this.key = key;
     this.modValue = modValue;
     this.unicode = unicode;
     this.time = Date.now();
-    this.button = document.createElement('input');
-    this.button.type = 'button';
-    this.text = text;
-    this.active = false;
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.ctx = this.canvas.getContext('2d');
     this.down = false;
+    this.active = false;
+    this._step = step;
+    this.isTouch = window.ontouchstart !== undefined;
 
-    document.addEventListener('keydown', event => {
-      if (event.key !== this.key) { return; }
+    const changeActionFactory = down => {
+      return event => {
+        this.down = down;
+        this.time = Date.now();
+        this.down ? this.activate() : this.deactivate();
+      };
+    };
 
-      this.down = true;
-      this.time = Date.now();
-      this.activate();
+    const keyActionFactory = down => {
+      const changeAction = changeActionFactory(down);
+      return event => {
+        if (event.key !== this.key) { return; }
+        changeAction(event);
+      };
+    };
+
+    document.addEventListener('keydown', keyActionFactory(true));
+
+    this.canvasHammer = new Hammer(this.canvas);
+    this.canvasHammer.on('hammer.input', event => {
+      this.render();
     });
 
-    document.addEventListener('keyup', event => {
-      if (event.key !== this.key) { return; }
+    Hammer.on(this.canvas, 'mousedown touchstart', changeActionFactory(true));
 
-      this.down = false;
-      this.time = Date.now();
-      this.deactivate();
-    });
+    this.render();
   }
 
   activate() {
     this.active = true;
-    this.button.classList.add('active');
+    this.render();
   }
 
   deactivate() {
     this.active = false;
-    this.button.classList.remove('active');
+    this.render();
   }
 
   toggleActive() { this.active ? this.deactivate() : this.activate(); }
 
-  set text(value) {
-    this.button.value = `${this.unicode} ${value}`;
+  get text() {
+    return `${this.isTouch ? '' : `${this.unicode} `}${this._step}`;
+  }
+
+  set step(step) {
+    this._step = step;
+    this.render();
+  }
+
+  render() {
+    this.ctx.save();
+    const fullRect = [0, 0, this.canvas.width, this.canvas.height];
+
+    this.ctx.clearRect(...fullRect);
+    this.ctx.fillStyle = this.active ? 'rgb(43, 156, 212)' : '#fff';
+    this.ctx.fillRect(...fullRect);
+
+    this.ctx.fillStyle = this.active ? '#fff' : '#000';
+    const x = (this.canvas.width - this.ctx.measureText(this.text).width) / 2;
+    const y = (this.canvas.height) / 2;
+    this.ctx.textBaseline = 'middle';
+    this.ctx.font = '11px Lato';
+    this.ctx.fillText(this.text, x, y);
+
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = '#000';
+    this.ctx.strokeRect(...fullRect);
+
+    this.ctx.restore();
   }
 }
 
@@ -101,7 +142,7 @@ class SliderPrecision {
     this.valueNorm = 0.5;
 
     this.active = false;
-    this.isTouch = false;
+    this.isTouch = window.ontouchstart !== undefined;
 
     this.container = document.createElement('div');
     this.container.classList.add('slider-precision');
@@ -116,49 +157,41 @@ class SliderPrecision {
 
     this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-    this.precisionMod = 0;
-    this.modKeys = {};
+    this.modButtons = {};
 
     this.buttonContainer = document.createElement('div');
     this.buttonContainer.classList.add('buttons');
     this.container.appendChild(this.buttonContainer);
 
     [
-      { key: 'default', mod: 0, unicode: '' },
-      // { key: 'Control', mod: 0, unicode: '\u2303' },
+      // { key: 'default', mod: 0, unicode: '' },
+      { key: 'Control', mod: 0, unicode: '\u2303' },
       { key:     'Alt', mod: 1, unicode: '\u2325' },
       { key:    'Meta', mod: 2, unicode: '\u2318' }
-    ].forEach(o => {
+    ].forEach((o, i) => {
       const step = this.getButtonStep(o.mod);
-      const mk = new ModKey(o.key, o.mod, o.unicode, step);
-      this.modKeys[o.key] = mk;
-      this.buttonContainer.appendChild(mk.button);
-      if (o.key === 'default') { mk.activate(); }
+      const mk = new ModKey(o.key, o.mod, o.unicode, step, 50, 50);
+      this.modButtons[o.key] = mk;
+      this.buttonContainer.appendChild(mk.canvas);
+      if (i === 0) { mk.activate(); }
     });
 
     document.addEventListener('keydown', event => {
-      if (!this.modKeys.hasOwnProperty(event.key)) { return; }
+      if (!this.modButtons.hasOwnProperty(event.key)) { return; }
 
-      this.precisionMod = this.modKeys[event.key].modValue;
-      Object.keys(this.modKeys).forEach(k => {
-        if (k !== event.key) { this.modKeys[k].deactivate(); }
+      Object.keys(this.modButtons).forEach(k => {
+        if (k !== event.key) { this.modButtons[k].deactivate(); }
       });
     });
 
     document.addEventListener('keyup', event => {
-      if (!this.modKeys.hasOwnProperty(event.key)) { return; }
-
-      const down = Object.keys(this.modKeys).filter(k => this.modKeys[k].down);
-      const latestTime = Math.max(...down.map(k => this.modKeys[k].time));
-      const latest = down.filter(k => this.modKeys[k].time === latestTime)[0];
-      const toActivate = this.modKeys[latest === undefined ? 'default' : latest];
-
-      toActivate.activate();
-      this.precisionMod = toActivate.modValue;
+      if (!this.modButtons.hasOwnProperty(event.key)) { return; }
+      const latestButton = this.getLatestButton();
+      latestButton.activate();
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
-      const getFrom = event.type === 'touchstart' ? event.touches[0] : event;
+      const getFrom = event.type === 'touchstart' ? event.touches[event.touches.length - 1] : event;
       const point = this.getInputPoint(getFrom);
       this.active = this.getHandleRect(this.valueNorm).contains(point);
       this.render();
@@ -188,18 +221,34 @@ class SliderPrecision {
 
     this.canvasHammer.on('press', event => {});
     this.canvasHammer.on('doubletap', event => {});
+
+    Hammer.on(this.buttonContainer, 'mousedown touchstart', event => {
+      const latestButton = this.getLatestButton();
+      Object.keys(this.modButtons).forEach(modKey => {
+        if (this.modButtons[modKey] !== latestButton) {
+          this.modButtons[modKey].deactivate();
+        }
+      });
+    });
+  }
+
+  getLatestButton() {
+    const down = Object.keys(this.modButtons).filter(k => this.modButtons[k].down);
+    const latestTime = Math.max(...down.map(k => this.modButtons[k].time));
+    const latestKey = down.filter(k => this.modButtons[k].time === latestTime)[0];
+    return this.modButtons[latestKey];
   }
 
   getButtonStep(modValue) {
     return SliderPrecision.getStepString(this.getPrecision() + modValue);
   }
 
-  updateButtonText(modKey) {
-    modKey.text = this.getButtonStep(modKey.modValue);
+  updateButtonStep(modKey) {
+    modKey.step = this.getButtonStep(modKey.modValue);
   }
 
   updateAllButtonsText() {
-    Object.keys(this.modKeys).forEach(modKey => this.updateButtonText(this.modKeys[modKey]));
+    Object.keys(this.modButtons).forEach(modKey => this.updateButtonStep(this.modButtons[modKey]));
   }
 
   round(number, precision = 0) {
@@ -239,8 +288,12 @@ class SliderPrecision {
     return 1 - Math.floor(Math.log10(this._valueMax - this._valueMin)) + mod;
   }
 
+  get activeButton() {
+    return Object.keys(this.modButtons).map(k => this.modButtons[k]).filter(mk => mk.active)[0];
+  }
+
   get precisionRounding() {
-    return this.getPrecision(this.precisionMod);
+    return this.getPrecision(this.activeButton.modValue);
   }
 
   get value() {
@@ -337,6 +390,4 @@ createOutput(horz, box);
 
 
 // approaches
-// 1. modifier keys
-//    - mod key feedback
 // 2. vertical slider

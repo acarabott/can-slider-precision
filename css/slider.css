@@ -53,21 +53,7 @@ canvas {
   text-align: center;
 }
 
-.buttons input {
+.buttons canvas {
+  display: inline-block;
   margin: 5px;
-  border: 1px rgb(0, 0, 0) solid;
-  background-color: white;
-  -webkit-appearance: none;
-  -webkit-border-radius: 0;
-  padding: 5px;
-}
-
-.buttons input:active, .buttons input.active {
-  background-color: var(--my-blue);
-  color:white;
-  border-color: var(--my-blue);
-}
-
-.buttons input:focus {
-  outline: none;
 }
