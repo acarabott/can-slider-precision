@@ -1,6 +1,10 @@
 // prevent mobile scrolling
 document.ontouchmove = function(event){ event.preventDefault(); };
 
+function constrain(val, min, max) {
+  return Math.max(min, Math.min(val, max));
+}
+
 class Point {
   constructor(x, y) {
     this.x = x;
