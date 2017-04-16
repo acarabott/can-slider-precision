@@ -155,8 +155,7 @@ class SliderPrecision {
   constructor(type = 'vert', long = 300, short = 50) {
     this.isVert = type === 'vert';
     this.longLength = long;
-    this.shortLength = short * 4;
-    this.adjustLength = short * 3;
+    this.shortLength = short * 3;
     this.handleDims = this.getOrientationValue([short, 40]);
 
     this._valueMin = 0.0;
@@ -356,8 +355,12 @@ class SliderPrecision {
     if (this.adjusting) {
       ctx.fillStyle = '#000';
       const thickness = 2;
-      const dims = this.getOrientationValue([this.adjustLength, 2]);
+      const dims = this.getOrientationValue([this.shortLength, 2]);
       const lineRect = this.getHandleRect(this.valuePoint, ...dims);
+      const xy = this.getOrientationValue(['x', 'y'])[0];
+      const start = (this.shortLength - this.shortLength)  / 2;
+      lineRect.tl[xy] = start;
+      lineRect.br[xy] = start + this.shortLength;
       ctx.fillRect(...lineRect.drawRect);
     }
 
