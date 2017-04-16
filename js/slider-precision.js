@@ -196,6 +196,7 @@ class SliderPrecision {
     document.addEventListener('keydown', event => {
       if (!this.modButtons.some(mb => mb.key === event.key)) { return; }
       this.modButtons.forEach(mb => { if (mb.key !== event.key) { mb.deactivate(); } });
+      this.render();
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
@@ -329,10 +330,12 @@ class SliderPrecision {
       ctx.fillRect(...xy, ...dims);
     }
 
-    { // horz slider line
+    // horz slider line
+
+    if (this.activeButton.modValue !== 0) {
       ctx.fillStyle = '#000';
       const thickness = 2;
-      const lineRect = this.getHandleRect(this.valueNorm, 2);
+      const lineRect = this.getHandleRect(this.valueNorm, 2, this.adjustShort);
       ctx.fillRect(...lineRect.drawRect);
     }
 
@@ -344,7 +347,7 @@ class SliderPrecision {
       ctx.fillRect(...handleRect.drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      const middleRect = this.getHandleRect(this.valueNorm, 2, this.adjustShort);
+      const middleRect = this.getHandleRect(this.valueNorm, 2, this.short);
 
       ctx.fillRect(...middleRect.drawRect);
     }
