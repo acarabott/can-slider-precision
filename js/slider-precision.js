@@ -333,11 +333,6 @@ class SliderPrecision {
       ctx.fillStyle = '#000';
       const thickness = 2;
       const lineRect = this.getHandleRect(this.valueNorm, 2);
-      // const xy = this.getOrientationValue([
-      //   (this.shortExtra - this.adjustShort) / 2,
-      //   this.long * this.valueNorm - (thickness / 2)
-      // ]);
-      // const dims = this.getOrientationValue([this.adjustShort, thickness]);
       ctx.fillRect(...lineRect.drawRect);
     }
 
