@@ -53,6 +53,10 @@ class Rect {
   get drawRect() { return [...this.tl, this.width, this.height]; }
 
   contains(point) { return point.gte(this.tl) && point.lte(this.br); }
+
+  toString() {
+    return `${this.tl}, ${this.br}`;
+  }
 }
 
 class ModKey {
