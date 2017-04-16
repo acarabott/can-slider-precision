@@ -154,27 +154,24 @@ class SliderPrecision {
 
   constructor(type = 'vert', long = 300, short = 50) {
     this.isVert = type === 'vert';
-    this.long = long;
-    this.short = short;
-    this.shortExtra = short * 4;
-    this.adjustShort = short * 3;
-    this.handleDim = 40;
+    this.longLength = long;
+    this.shortLength = short * 4;
+    this.adjustLength = short * 3;
+    this.handleDims = this.getOrientationValue([short, 40]);
 
     this._valueMin = 0.0;
     this._valueMax = 1.0;
-    this.valueNorm = 0.5;
-    this.valueAdjustNorm = 0.5;
+    this.valuePoint = new Point(0.5, 0.5);
 
     this.active = false;
-    this.adjusting = true;
     this.isTouch = window.ontouchstart !== undefined;
 
     this.container = document.createElement('div');
     this.container.classList.add('slider-precision');
     this.canvas = document.createElement('canvas');
     this.container.appendChild(this.canvas);
-    this.canvas.height = type === 'vert' ? this.long : this.shortExtra;
-    this.canvas.width = type === 'vert' ? this.shortExtra : this.long;
+    this.canvas.height = type === 'vert' ? this.longLength : this.shortLength;
+    this.canvas.width = type === 'vert' ? this.shortLength : this.longLength;
     this.canvas.style.cursor = 'pointer';
     this.canvas.style.userSelect = 'none';
     this.ctx = this.canvas.getContext('2d');
@@ -207,10 +204,16 @@ class SliderPrecision {
       this.render();
     });
 
+
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
-      const getFrom = event.type === 'touchstart' ? event.touches[event.touches.length - 1] : event;
-      const point = this.getInputPoint(getFrom);
-      this.active = this.getHandleRect(this.valueNorm).contains(point);
+      if (event.target !== this.canvas) { return; }
+
+      const isTouch = event.type === 'touchstart';
+      const getFrom = isTouch ? event.touches[event.touches.length - 1] : event;
+      const point = this.getInputPointFromEvent(getFrom);
+      // const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
+      // this.active = handleRect.contains(point);
+      this.active = true;
       this.render();
     });
 
@@ -230,7 +233,10 @@ class SliderPrecision {
 
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
-        this.valueNorm = this.calculateValueNorm(event);
+        const valuePoint = this.getValuePointFromEvent(event.srcEvent);
+        const toChangePair = this.getReversedPairIf(this.adjusting, ['x', 'y']);
+        const toChange = this.getOrientationValue(toChangePair)[0];
+        this.valuePoint[toChange] = valuePoint[toChange];
         this.updateOutput();
       }
       this.render();
@@ -260,31 +266,33 @@ class SliderPrecision {
     return roundedTempNumber / factor;
   }
 
-  getInputPoint(event) {
-    const bb = event.target.getBoundingClientRect();
+  getInputPointFromEvent(event) {
+    const bb = this.canvas.getBoundingClientRect();
     return new Point(event.clientX - bb.left, event.clientY - bb.top);
   }
 
-  calculateValueNorm(event) {
-    const bb = event.target.getBoundingClientRect();
-    const x = event.hasOwnProperty('center') ? event.center.x : event.pageX;
-    const y = event.hasOwnProperty('center') ? event.center.y : event.pageY;
-    const longVal = this.getOrientationValue([this.long - (y - bb.top) , x - bb.left])[0];
-    const v = Math.min(Math.max(0, longVal), this.long);
-    return v / this.long;
+  getValuePointFromEvent(event) {
+    const inputPoint = this.getInputPointFromEvent(event);
+    const dimensions = this.getOrientationValue([this.shortLength, this.longLength]);
+    const coords = [...inputPoint].map((c, i) => constrain(c, 0, dimensions[i]) / dimensions[i]);
+    return new Point(coords[0], 1.0 - coords[1]);
+  }
+
+  getHandleRect(valuePoint, width, height) {
+    const lengths = this.getOrientationValue([this.shortLength, this.longLength]);
+    const xm = this.getOrientationValue([this.adjusting ? valuePoint.x : 0.5, valuePoint.x])[0];
+    const ym = this.getOrientationValue([valuePoint.y, this.adjusting ? valuePoint.y : 0.5])[0];
+    const x = xm * lengths[0] - this.getOrientationValue([width / 2, 0])[0];
+    const y = (1.0 - ym) * lengths[1] - this.getOrientationValue([0, height / 2])[0];
+    return new Rect(x, y, width, height);
+  }
+
+  getReversedPairIf(test, pair) {
+    return pair.slice()[test ? 'valueOf' : 'reverse']();
   }
 
   getOrientationValue(twoOptions) {
-    return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
-  }
-
-  getHandleRect(valueNorm, short = this.handleDim, long = this.short) {
-    const origDims = [long, short];
-    const longPos = this.getOrientationValue([1.0 - valueNorm, valueNorm])[0];
-    const shortPos = this.adjusting ? this.valueAdjustNorm : 0.5;
-    const tl = this.getOrientationValue([this.shortExtra * shortPos - (origDims[0] / 2),
-                                         this.long * longPos - (origDims[1] / 2)]);
-    return new Rect(...tl, ...this.getOrientationValue(origDims));
+    return this.getReversedPairIf(this.isVert, twoOptions);
   }
 
   getPrecision(mod = 0) {
@@ -295,6 +303,10 @@ class SliderPrecision {
     return this.modButtons.find(mb => mb.active);
   }
 
+  get adjusting() {
+    return this.activeButton.modValue !== 0;
+  }
+
   get precisionRounding() {
     return this.getPrecision(this.activeButton.modValue);
   }
@@ -302,6 +314,7 @@ class SliderPrecision {
   get value() {
     const outputRange = this._valueMax - this._valueMin;
     const scaled = (this._valueMin + (this.valueNorm * outputRange));
+    // TODO take into account the adjustment
     return this.round(scaled, this.precisionRounding);
   }
 
@@ -332,32 +345,31 @@ class SliderPrecision {
     { // line
       ctx.fillStyle = '#000';
       const thickness = 2;
-      const pos = this.shortExtra * 0.5 - (thickness / 2);
+      const pos = this.shortLength * 0.5 - (thickness / 2);
       const xy = this.getOrientationValue([pos, 0]);
-      const dims = this.getOrientationValue([thickness, this.long]);
+      const dims = this.getOrientationValue([thickness, this.longLength]);
       ctx.fillRect(...xy, ...dims);
     }
 
-    // horz slider line
 
-    if (this.activeButton.modValue !== 0) {
-      ctx.fillStyle = '#000';
-      const thickness = 2;
-      const lineRect = this.getHandleRect(this.valueNorm, 2, this.adjustShort);
-      ctx.fillRect(...lineRect.drawRect);
-    }
+    // horz slider line
+    // if (this.activeButton.modValue !== 0) {
+    //   ctx.fillStyle = '#000';
+    //   const thickness = 2;
+    //   const lineRect = this.getHandleRect(this.valueNorm, 2, this.adjustLength);
+    //   ctx.fillRect(...lineRect.drawRect);
+    // }
 
     { // handle
       const opacity = this.active ? 0.8 : 0.5;
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
 
-      const handleRect = this.getHandleRect(this.valueNorm, this.handleDim, this.short);
+      const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
       ctx.fillRect(...handleRect.drawRect);
 
-      ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      const middleRect = this.getHandleRect(this.valueNorm, 2, this.short);
-
-      ctx.fillRect(...middleRect.drawRect);
+      // ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+      // const middleRect = this.getHandleRect(this.valueNorm, 2, this.short);
+      // ctx.fillRect(...middleRect.drawRect);
     }
 
     ctx.restore();
