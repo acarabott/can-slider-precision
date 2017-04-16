@@ -16,7 +16,7 @@ class Point {
 
   *[Symbol.iterator]() { yield this.x; yield this.y; }
 
-  toString() { return `${this.x}, ${this.y}`; }
+  toString() { return `${this.x.toFixed(0)}, ${this.y.toFixed(0)}`; }
 
   subtract(pointOrX, y) {
     const args = pointOrX instanceof Point
@@ -282,8 +282,8 @@ class SliderPrecision {
     const lengths = this.getOrientationValue([this.shortLength, this.longLength]);
     const xm = this.getOrientationValue([this.adjusting ? valuePoint.x : 0.5, valuePoint.x])[0];
     const ym = this.getOrientationValue([valuePoint.y, this.adjusting ? valuePoint.y : 0.5])[0];
-    const x = xm * lengths[0] - this.getOrientationValue([width / 2, 0])[0];
-    const y = (1.0 - ym) * lengths[1] - this.getOrientationValue([0, height / 2])[0];
+    const x = xm * lengths[0] - width / 2;
+    const y = (1.0 - ym) * lengths[1] - height / 2;
     return new Rect(x, y, width, height);
   }
 
@@ -353,12 +353,13 @@ class SliderPrecision {
 
 
     // horz slider line
-    // if (this.activeButton.modValue !== 0) {
-    //   ctx.fillStyle = '#000';
-    //   const thickness = 2;
-    //   const lineRect = this.getHandleRect(this.valueNorm, 2, this.adjustLength);
-    //   ctx.fillRect(...lineRect.drawRect);
-    // }
+    if (this.adjusting) {
+      ctx.fillStyle = '#000';
+      const thickness = 2;
+      const dims = this.getOrientationValue([this.adjustLength, 2]);
+      const lineRect = this.getHandleRect(this.valuePoint, ...dims);
+      ctx.fillRect(...lineRect.drawRect);
+    }
 
     { // handle
       const opacity = this.active ? 0.8 : 0.5;
@@ -367,9 +368,11 @@ class SliderPrecision {
       const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
       ctx.fillRect(...handleRect.drawRect);
 
-      // ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      // const middleRect = this.getHandleRect(this.valueNorm, 2, this.short);
-      // ctx.fillRect(...middleRect.drawRect);
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+      const dims = this.handleDims.slice();
+      dims[this.getOrientationValue([1, 0])[0]] = 2;
+      const middleRect = this.getHandleRect(this.valuePoint, ...dims);
+      ctx.fillRect(...middleRect.drawRect);
     }
 
     ctx.restore();
