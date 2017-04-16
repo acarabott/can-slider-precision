@@ -150,14 +150,17 @@ class SliderPrecision {
     this.isVert = type === 'vert';
     this.long = long;
     this.short = short;
-    this.shortExtra = short * 3;
+    this.shortExtra = short * 4;
+    this.adjustShort = short * 3;
     this.handleDim = 40;
 
     this._valueMin = 0.0;
     this._valueMax = 1.0;
     this.valueNorm = 0.5;
+    this.valueAdjustNorm = 0.5;
 
     this.active = false;
+    this.adjusting = true;
     this.isTouch = window.ontouchstart !== undefined;
 
     this.container = document.createElement('div');
@@ -292,11 +295,12 @@ class SliderPrecision {
     return twoOptions.slice()[this.isVert ? 'valueOf' : 'reverse']();
   }
 
-  getHandleRect(valueNorm, dimension = this.handleDim) {
-    const origDims = [this.short, dimension];
-    const norm = this.getOrientationValue([1.0 - valueNorm, valueNorm])[0];
-    const tl = this.getOrientationValue([this.short * 1.5 - (origDims[0] / 2),
-                                         this.long * norm - (origDims[1] / 2)]);
+  getHandleRect(valueNorm, short = this.handleDim, long = this.short) {
+    const origDims = [long, short];
+    const longPos = this.getOrientationValue([1.0 - valueNorm, valueNorm])[0];
+    const shortPos = this.adjusting ? this.valueAdjustNorm : 0.5;
+    const tl = this.getOrientationValue([this.shortExtra * shortPos - (origDims[0] / 2),
+                                         this.long * longPos - (origDims[1] / 2)]);
     return new Rect(...tl, ...this.getOrientationValue(origDims));
   }
 
@@ -342,28 +346,38 @@ class SliderPrecision {
 
     ctx.save();
 
-    // line
-    {
+    { // line
       ctx.fillStyle = '#000';
       const thickness = 2;
-      const pos = this.short * 1.5 - (thickness / 2);
+      const pos = this.shortExtra * 0.5 - (thickness / 2);
       const xy = this.getOrientationValue([pos, 0]);
       const dims = this.getOrientationValue([thickness, this.long]);
       ctx.fillRect(...xy, ...dims);
     }
 
-    // handle
-    {
+    { // horz slider line
+      ctx.fillStyle = '#000';
+      const thickness = 2;
+      const lineRect = this.getHandleRect(this.valueNorm, 2);
+      // const xy = this.getOrientationValue([
+      //   (this.shortExtra - this.adjustShort) / 2,
+      //   this.long * this.valueNorm - (thickness / 2)
+      // ]);
+      // const dims = this.getOrientationValue([this.adjustShort, thickness]);
+      ctx.fillRect(...lineRect.drawRect);
+    }
+
+    { // handle
       const opacity = this.active ? 0.8 : 0.5;
       ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
 
-      const handleRect = this.getHandleRect(this.valueNorm, this.handleDim);
+      const handleRect = this.getHandleRect(this.valueNorm, this.handleDim, this.short);
       ctx.fillRect(...handleRect.drawRect);
 
       ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
-      const middleRect = this.getHandleRect(this.valueNorm, 2);
-      ctx.fillRect(...middleRect.drawRect);
+      const middleRect = this.getHandleRect(this.valueNorm, 2, this.adjustShort);
 
+      ctx.fillRect(...middleRect.drawRect);
     }
 
     ctx.restore();
