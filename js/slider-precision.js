@@ -5,6 +5,84 @@ function constrain(val, min, max) {
   return Math.max(min, Math.min(val, max));
 }
 
+class SliderLayer {
+  constructor(canvas, orientation, modValue) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext('2d');
+    this.orientation = orientation;
+    this.value = 0.25;
+    this.modValue = modValue;
+    this._active = false;
+    this.grabbed = false;
+    this.handleDims = [40, 40];
+    [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
+
+    Hammer.on(this.canvas, 'mousedown touchstart', event => {
+      const isTouch = event.type.includes('touch');
+      const getFrom = isTouch ? event.touches.item(event.touches.length - 1) : event;
+      const bb = this.canvas.getBoundingClientRect();
+      const x = constrain(getFrom.clientX - bb.left, 0, this.canvas.width);
+      const y = constrain(getFrom.clientY - bb.top, 0, this.canvas.height);
+      this.grabbed = this.active && this.handleRect.contains(new Point(x, y));
+      this.render();
+    });
+
+    Hammer.on(document.body, 'mouseup touchend', event => {
+      this.grabbed = false;
+      this.render();
+    });
+
+    this.render();
+  }
+
+  get isVert() { return this.orientation === 'vert'; }
+
+  get active() { return this._active; }
+
+  set active(active) {
+    this._active = active;
+    this.render();
+  }
+
+  getOrientationPair(pair) {
+    const clone = pair.slice();
+    return this.orientation === 'vert' ? clone : clone.reverse();
+  }
+
+  getOrientationValue(pair) {
+    return this.getOrientationPair(pair)[0];
+  }
+
+  get handleRect() {
+    const longPos = this.value * this.longLength;
+    const otherValue = 0.5;
+    const shortPos = otherValue * this.shortLength - this.getOrientationValue(this.handleDims) / 2;
+    const tl = new Point(...this.getOrientationPair([shortPos, longPos]));
+    return new Rect(tl, tl.add(...this.handleDims));
+  }
+
+  render() {
+    if (!this.active) { return; }
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.save();
+
+    // line
+    this.ctx.fillStyle = '#000';
+    const thickness = 2;
+    const halfThick = thickness / 2;
+    const tl = new Point(...this.getOrientationPair([this.shortLength / 2 - halfThick, 0]));
+    const dims = this.getOrientationPair([thickness, this.longLength]);
+    const lineRect = new Rect(tl, tl.add(...dims));
+    this.ctx.fillRect(...lineRect.drawRect);
+
+    // handle
+    const opacity = this.grabbed ? 0.8 : 0.5;
+    this.ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
+    this.ctx.fillRect(...this.handleRect.drawRect);
+    this.ctx.restore();
+  }
+}
+
 class SliderPrecision {
   constructor(orientation, longLength = 400, shortLength = 200) {
     this.orientation = orientation;
@@ -23,21 +101,23 @@ class SliderPrecision {
     this.container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d');
 
+    this.userPos = new Point(0, 0);
 
-    this.mousePos = new Point(0, 0);
-    const hammer = new Hammer(this.canvas);
-
-    Hammer.on(this.canvas, 'mousedown touchstart mousemove touchmove', event => {
-      const isTouch = event.type.includes('touch');
-      const getFrom = isTouch ? event.touches.item(event.touches.length - 1) : event;
-      const bb = this.canvas.getBoundingClientRect();
-      this.mousePos.x = constrain(getFrom.clientX - bb.left, 0, this.canvas.width);
-      this.mousePos.y = constrain(getFrom.clientY - bb.top, 0, this.canvas.height);
-    });
-
-
-    this.render();
+    {
+      const orientations = this.getOrientationPair(['vert', 'horz']);
+      this.layers = [
+        { orientation: orientations[0], modValue: 0, value: 0.5 },
+        { orientation: orientations[1], modValue: 1, value: 0.5 },
+        { orientation: orientations[1], modValue: 2, value: 0.5 },
+      ].map((opts, i) => {
+        const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue);
+        layer.active = i === 0;
+        return layer;
+      });
+    }
   }
+
+  get activeLayer() { return this.layers.find(l => l.active); }
 
   getOrientationPair(pair) {
     const clone = pair.slice();
@@ -54,17 +134,6 @@ class SliderPrecision {
 
   set outputElement(element) {
     this.output = element;
-  }
-
-  render() {
-    this.ctx.save();
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.ctx.fillStyle = '#000';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.ctx.restore();
   }
 }
 
