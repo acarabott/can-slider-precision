@@ -232,7 +232,7 @@ class SliderPrecision {
     this.canvasHammer.on('panmove', event => {
       if (this.active) {
         const valuePoint = this.getValuePointFromEvent(event.srcEvent);
-        const toChangePair = this.getReversedPairIf(this.adjusting, ['x', 'y']);
+        const toChangePair = this.getReversedPairIf(this.adjusting, ['y', 'x']);
         const toChange = this.getOrientationValue(toChangePair)[0];
         this.valuePoint[toChange] = valuePoint[toChange];
         this.updateOutput();
@@ -286,11 +286,11 @@ class SliderPrecision {
   }
 
   getReversedPairIf(test, pair) {
-    return pair.slice()[test ? 'valueOf' : 'reverse']();
+    return pair.slice()[test ? 'reverse': 'valueOf']();
   }
 
   getOrientationValue(twoOptions) {
-    return this.getReversedPairIf(this.isVert, twoOptions);
+    return this.getReversedPairIf(!this.isVert, twoOptions);
   }
 
   getPrecision(mod = 0) {
