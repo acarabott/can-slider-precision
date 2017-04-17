@@ -184,17 +184,17 @@ class SliderPrecision {
     this.buttonContainer.classList.add('buttons');
     this.container.appendChild(this.buttonContainer);
 
-    [
+    this.modButtons = [
       // { key: 'default', mod: 0, unicode: '' },
       { key: 'Control', mod: 0, unicode: '\u2303' },
       { key:     'Alt', mod: 1, unicode: '\u2325' },
       { key:    'Meta', mod: 2, unicode: '\u2318' }
-    ].forEach((o, i) => {
+    ].map((o, i) => {
       const step = this.getButtonStep(o.mod);
       const mk = new ModButton(o.key, o.mod, o.unicode, step, 50, 50);
       if (i === 0) { mk.activate(); }
-      this.modButtons.push(mk);
       this.buttonContainer.appendChild(mk.canvas);
+      return mk;
     });
 
     document.addEventListener('keydown', event => {
