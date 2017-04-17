@@ -32,7 +32,7 @@ class SliderLayer {
 
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
     hammer.on('panmove', event => {
-      if (!this.active) { return; }
+      if (!(this.active && this.grabbed)) { return; }
       const userPoint = this.getRelativePoint(event.srcEvent);
       const axis = this.getOrientationValue(['y', 'x']);
       const userPos = userPoint[axis];
