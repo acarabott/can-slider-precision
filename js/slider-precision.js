@@ -126,6 +126,9 @@ class SliderPrecision {
     this.container = document.createElement('div');
     this.container.classList.add('slider');
 
+    this._min = 0.0;
+    this._max = 1.0;
+
     this.canvas = document.createElement('canvas');
     {
       const canvasDims = this.getOrientationPair([shortLength, longLength]);
@@ -178,6 +181,20 @@ class SliderPrecision {
     this.render();
   }
 
+  get min() { return this._min; }
+  set min(min) {
+    this._min = min;
+    this.render();
+    this.updateOutput();
+  }
+
+  get max() { return this._max; }
+  set max(max) {
+    this._max = max;
+    this.render();
+    this.updateOutput();
+  }
+
   get activeLayer() { return this.layers.find(l => l.active); }
 
   getOrientationPair(pair) {
@@ -203,13 +220,50 @@ class SliderPrecision {
     this.layers.forEach(l => l.render());
   }
 
+  round(number, precision = 0) {
+    const factor = Math.pow(10, precision);
+    const tempNumber = number * factor;
+    const roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+  }
+
+  getPrecision(mod) {
+    return 1 - Math.floor(Math.log10(this.max - this.min)) + mod;
+  }
+
+  constrainToRange(value) {
+    return Math.max(this.min, Math.min(value, this.max));
+  }
+
   get value() {
-    const values = this.layers.map(l => l.value);
-    return values.reduce((v, p) => v + p);
+    const range = this.max - this.min;
+    const mainValue = this.layers[0].value * range + this.min;
+    const mainPrecision = this.getPrecision(this.layers[0].modValue);
+    const mainRounded = this.constrainToRange(this.round(mainValue, mainPrecision));
+
+    const adjustments = this.layers.slice(1).map((l, i) => {
+      const precision = this.getPrecision(l.modValue);
+      const subRange = Math.pow(10, -precision) * 10;
+      const scaled = (l.value - 0.5) * 2 * subRange;
+      const rounded = this.round(scaled, precision);
+      return rounded;
+    });
+    const adjustment = adjustments.reduce((c, p) => c + p);
+
+    return this.constrainToRange(mainRounded + adjustment);
+  }
+
+  get precisionRounding() {
+    const modValues = this.layers.map(l => l.modValue);
+    return this.getPrecision(Math.max(...modValues));
+  }
+
+  get valueRender() {
+    return this.value.toFixed(Math.max(0, this.precisionRounding));
   }
 
   updateOutput() {
-    if (this.output !== undefined) { this.output.value = this.value; }
+    if (this.output !== undefined) { this.output.value = this.valueRender; }
   }
 }
 
@@ -224,8 +278,8 @@ const box = document.getElementById('container');
 
 const vert = new SliderPrecision('vert');
 
-vert.valueMin = 0;
-vert.valueMax = 100;
+vert.min = 50;
+vert.max = 155;
 vert.appendTo(box);
 createOutput(vert, box);
 
