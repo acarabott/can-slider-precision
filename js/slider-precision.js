@@ -171,7 +171,6 @@ class SliderPrecision {
     this.container.appendChild(this.canvas);
     this.canvas.height = type === 'vert' ? this.longLength : this.shortLength;
     this.canvas.width = type === 'vert' ? this.shortLength : this.longLength;
-    this.canvas.style.cursor = 'pointer';
     this.canvas.style.userSelect = 'none';
     this.ctx = this.canvas.getContext('2d');
     this.canvasHammer = new Hammer(this.canvas);
@@ -204,22 +203,17 @@ class SliderPrecision {
       this.updateCursor();
     });
 
-    Hammer.on(this.canvas, 'mouseenter', event => {
-      this.updateCursor();
-    });
-
-    Hammer.on(this.canvas, 'mouseleave', event => {
-      this.canvas.style.cursor = 'normal';
+    Hammer.on(this.canvas, 'mousemove', event => {
+      if(this.cursorInsideHandle(event)) {
+        this.updateCursor();
+      } else {
+        this.canvas.style.cursor = 'default';
+      }
     });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       if (event.target !== this.canvas) { return; }
-
-      const isTouch = event.type === 'touchstart';
-      const getFrom = isTouch ? event.touches[event.touches.length - 1] : event;
-      const point = this.getInputPointFromEvent(getFrom);
-      const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
-      this.active = handleRect.contains(point);
+      this.active = this.cursorInsideHandle(event);
       this.render();
     });
 
@@ -251,6 +245,14 @@ class SliderPrecision {
     this.canvasHammer.on('press', event => {});
     this.canvasHammer.on('doubletap', event => {});
 
+  }
+
+  cursorInsideHandle(event) {
+    const isTouch = event.type === 'touchstart';
+    const getFrom = isTouch ? event.touches[event.touches.length - 1] : event;
+    const point = this.getInputPointFromEvent(getFrom);
+    const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
+    return handleRect.contains(point);
   }
 
   updateCursor() {
