@@ -18,8 +18,12 @@ class SliderLayer {
     this.active = false;
     this.grabbed = false;
     this.alwaysVisible = false;
-    this._handleDims = [80, 40 / (modValue + 1)];
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
+
+    {
+      const scale = 0.2;
+      this._handleDims = [longLength * scale, (shortLength * scale) / (this.modValue + 1)];
+    }
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const userPoint = this.getRelativePoint(event);
@@ -147,10 +151,8 @@ class SliderPrecision {
       { orientation: orientations[1], modValue: 1, value: 0.5, rgb: [43, 212, 156] },
       { orientation: orientations[1], modValue: 2, value: 0.5, rgb: [249, 182, 118] },
     ].map((opts, i) => {
-
       const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
       layer.addValueListener(value => { this.updateOutput(); });
-
       if (i === 0) {
         layer.active = true;
         layer.alwaysVisible = true;
@@ -250,8 +252,7 @@ class SliderPrecision {
   }
 
   get precisionRounding() {
-    const modValues = this.layers.map(l => l.modValue);
-    return this.getPrecision(Math.max(...modValues));
+    return this.getPrecision(Math.max(...this.layers.map(l => l.modValue)));
   }
 
   get valueRender() {
@@ -274,8 +275,9 @@ const box = document.getElementById('container');
 
 const vert = new SliderPrecision('vert');
 
-vert.min = 50;
-vert.max = 155;
+vert.min = 0;
+vert.max = 100;
+
 vert.appendTo(box);
 createOutput(vert, box);
 
