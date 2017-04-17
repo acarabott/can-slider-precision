@@ -12,11 +12,12 @@ class SliderLayer {
     this.orientation = orientation;
     this._value = 0.5;
     this.valueActions = [];
-    this.otherValue = 0.5;
+    this._otherValue = 0.5;
     this.modValue = modValue;
     this.rgb = rgb;
     this.active = false;
     this.grabbed = false;
+    this.alwaysVisible = false;
     this._handleDims = [80, 40 / (modValue + 1)];
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
 
@@ -55,12 +56,16 @@ class SliderLayer {
     this.valueActions.push(func);
   }
 
-  get value() { return this._value; }
+  get value() { return Math.abs((this.isVert ? 1 : 0) - this._value); }
 
   set value(value) {
     this._value = value;
     this.valueActions.forEach(func => func(this._value));
   }
+
+  get otherValue() { return Math.abs((this.isVert ? 0 : 1) - this._otherValue);}
+
+  set otherValue(otherValue) { this._otherValue = otherValue; }
 
   get handleDims() { return this.getOrientationPair(this._handleDims); }
 
@@ -76,33 +81,40 @@ class SliderLayer {
   }
 
   get handleRect() {
-    const value = Math.abs((this.isVert ? 1 : 0) - this.value);
     const dims = this.getOrientationPair(this.handleDims);
     // dims seem like they are the wrong way round, but they aren't
     // because the handle is perpendicular to the main direction
-    const longPos = value * this.longLength - dims[1] / 2;
-    const otherValue = Math.abs((this.isVert ? 0 : 1) - this.otherValue);
+    const longPos = this.value * this.longLength - dims[1] / 2;
     // similar deal with the invert here...
-    const shortPos = otherValue * this.shortLength - dims[0] / 2;
+    const shortPos = this.otherValue * this.shortLength - dims[0] / 2;
     const tl = new Point(...this.getOrientationPair([shortPos, longPos]));
     return new Rect(tl, tl.add(...this.handleDims));
   }
 
   render() {
-    const opacity = this.active ? 1.0 : 0.1;
+    const opacity = this.active ? 1.0 : 0.0;
     this.ctx.save();
 
     // line
-    this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${this.alwaysVisible || this.active ? 1.0 : 0})`;
     const thickness = 2;
     const halfThick = thickness / 2;
-    const tl = new Point(...this.getOrientationPair([this.shortLength / 2 - halfThick, 0]));
+    const tl = new Point(...this.getOrientationPair([this.otherValue * this.shortLength - halfThick, 0]));
+    console.log("this.shortLength:", this.shortLength);
+    console.log("this.longLength:", this.longLength);
     const dims = this.getOrientationPair([thickness, this.longLength]);
     const lineRect = new Rect(tl, tl.add(...dims));
     this.ctx.fillRect(...lineRect.drawRect);
 
     // handle
-    this.ctx.fillStyle = `rgba(${this.rgb.join(',')}, ${opacity * (this.grabbed ? 0.8 : 0.5)})`;
+    const handleOpacity = this.active
+      ? this.grabbed
+        ? 0.8
+        : 0.5
+      : this.alwaysVisible
+        ? 0.8
+        : 0.3;
+    this.ctx.fillStyle = `rgba(${this.rgb.join(',')}, ${handleOpacity})`;
     this.ctx.fillRect(...this.handleRect.drawRect);
     this.ctx.restore();
   }
@@ -137,11 +149,11 @@ class SliderPrecision {
         const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
         if (i === 0) {
           layer.active = true;
+          layer.alwaysVisible = true;
           layer.addValueListener(value => {
             this.layers.slice(1).forEach(l => l.otherValue = value);
           });
         }
-
         return layer;
       });
     }
