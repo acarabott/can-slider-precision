@@ -10,7 +10,9 @@ class SliderLayer {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d');
     this.orientation = orientation;
-    this.value = 0.25;
+    this._value = 0.5;
+    this.valueActions = [];
+    this.otherValue = 0.5;
     this.modValue = modValue;
     this.active = false;
     this.grabbed = false;
@@ -37,7 +39,6 @@ class SliderLayer {
       const absValue = axis === 'y' ? this.canvas.height - userPos : userPos;
       this.value = absValue / this.longLength;
     });
-
   }
 
   getRelativePoint(event) {
@@ -47,6 +48,17 @@ class SliderLayer {
     const x = constrain(getFrom.clientX - bb.left, 0, this.canvas.width);
     const y = constrain(getFrom.clientY - bb.top, 0, this.canvas.height);
     return new Point(x, y);
+  }
+
+  addValueListener(func) {
+    this.valueActions.push(func);
+  }
+
+  get value() { return this._value; }
+
+  set value(value) {
+    this._value = value;
+    this.valueActions.forEach(func => func(this._value));
   }
 
   get handleDims() { return this.getOrientationPair(this._handleDims); }
@@ -63,11 +75,13 @@ class SliderLayer {
   }
 
   get handleRect() {
-    const value = this.getOrientationValue([1 - this.value, this.value]);
+    const value = Math.abs((this.isVert ? 1 : 0) - this.value);
     const dims = this.getOrientationPair(this.handleDims);
     // dims seem like they are the wrong way round, but they aren't
+    // because the handle is perpendicular to the main direction
     const longPos = value * this.longLength - dims[1] / 2;
-    const otherValue = 0.5;
+    const otherValue = Math.abs((this.isVert ? 0 : 1) - this.otherValue);
+    // similar deal with the invert here...
     const shortPos = otherValue * this.shortLength - dims[0] / 2;
     const tl = new Point(...this.getOrientationPair([shortPos, longPos]));
     return new Rect(tl, tl.add(...this.handleDims));
@@ -75,7 +89,6 @@ class SliderLayer {
 
   render() {
     const opacity = this.active ? 1.0 : 0.1;
-    // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.save();
 
     // line
@@ -120,7 +133,13 @@ class SliderPrecision {
         { orientation: orientations[1], modValue: 2, value: 0.5 },
       ].map((opts, i) => {
         const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue);
-        layer.active = i === 0;
+        if (i === 0) {
+          layer.active = true;
+          layer.addValueListener(value => {
+            this.layers.slice(1).forEach(l => l.otherValue = value);
+          });
+        }
+
         return layer;
       });
     }
