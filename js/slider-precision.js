@@ -6,24 +6,21 @@ function constrain(val, min, max) {
 }
 
 class SliderLayer {
-  constructor(canvas, orientation, modValue, rgb) {
+  constructor(canvas, orientation, modValue, handleDims, rgb) {
     this.canvas = canvas;
-    this.ctx = this.canvas.getContext('2d');
     this.orientation = orientation;
+    this.modValue = modValue;
+    this._handleDims = handleDims;
+    this.rgb = rgb;
+
+    this.ctx = this.canvas.getContext('2d');
     this._value = 0.5;
     this.valueActions = [];
     this._otherValue = 0.5;
-    this.modValue = modValue;
-    this.rgb = rgb;
     this.active = false;
     this.grabbed = false;
     this.alwaysVisible = false;
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
-
-    {
-      const scale = 0.2;
-      this._handleDims = [longLength * scale, (shortLength * scale) / (this.modValue + 1)];
-    }
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const userPoint = this.getRelativePoint(event);
@@ -150,10 +147,16 @@ class SliderPrecision {
       { orientation: orientations[0], modValue: 0, value: 0.5, rgb: [43, 156, 212] },
       { orientation: orientations[1], modValue: 1, value: 0.5, rgb: [43, 212, 156] },
       { orientation: orientations[1], modValue: 2, value: 0.5, rgb: [249, 182, 118] },
-    ].map((opts, i) => {
-      const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
+      // TODO allow adjusts on same orientation
+    ].map((opts, i, arr) => {
+      const isMain = i === 0;
+      const scale = 0.2;
+      const scales = [scale, isMain ? scale : scale * (1 - (i * (1 / arr.length)))];
+      const handleDims = [(isMain ? longLength : shortLength), shortLength].map((v, i) => v * scales[i]);
+      const layer = new SliderLayer(this.canvas,opts.orientation,opts.modValue,handleDims,opts.rgb);
       layer.addValueListener(value => { this.updateOutput(); });
-      if (i === 0) {
+
+      if (isMain) {
         layer.active = true;
         layer.alwaysVisible = true;
         layer.addValueListener(value => this.layers.slice(1).forEach(l => l.otherValue = value));
@@ -172,7 +175,7 @@ class SliderPrecision {
       const idx = num - 1;
       // end getting idx
 
-      if (idx >= this.layers.length) { return; }
+      if (idx < 0 || idx >= this.layers.length) { return; }
       const grabbing = this.layers.find(l => l.active).grabbed;
       this.layers.forEach(l => l.active = false);
       this.layers[idx].active = true;
@@ -199,13 +202,20 @@ class SliderPrecision {
 
   get activeLayer() { return this.layers.find(l => l.active); }
 
+  getReversedPairIf(pair, test) {
+    return test ? pair.slice().reverse() : pair.slice();
+  }
+
+  getReversedValueIf(pair, test) {
+    return test ? pair[1] : pair[0];
+  }
+
   getOrientationPair(pair) {
-    const clone = pair.slice();
-    return this.orientation === 'vert' ? clone : clone.reverse();
+    return this.getReversedPairIf(pair, this.orientation === 'horz');
   }
 
   getOrientationValue(pair) {
-    return this.getOrientationPair(pair)[0];
+    return this.getReversedValueIf(pair, this.orientation === 'horz');
   }
 
   appendTo(element) {
