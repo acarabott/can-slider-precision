@@ -124,8 +124,6 @@ class SliderPrecision {
     this.container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d');
 
-    this.userPos = new Point(0, 0);
-
     {
       const orientations = this.getOrientationPair(['vert', 'horz']);
       this.layers = [
