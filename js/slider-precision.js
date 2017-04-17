@@ -14,7 +14,7 @@ class SliderLayer {
     this.modValue = modValue;
     this._active = false;
     this.grabbed = false;
-    this.handleDims = [40, 40];
+    this._handleDims = [80, 40];
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
@@ -32,8 +32,17 @@ class SliderLayer {
       this.render();
     });
 
+    const hammer = new Hammer(this.canvas);
+
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
+    hammer.on('panmove', event => {
+      console.log(event);
+    });
+
     this.render();
   }
+
+  get handleDims() { return this.getOrientationPair(this._handleDims); }
 
   get isVert() { return this.orientation === 'vert'; }
 
