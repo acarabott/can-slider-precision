@@ -56,14 +56,14 @@ class SliderLayer {
     this.valueActions.push(func);
   }
 
-  get value() { return Math.abs((this.isVert ? 1 : 0) - this._value); }
+  get value() { return this._value; }
 
   set value(value) {
     this._value = value;
     this.valueActions.forEach(func => func(this._value));
   }
 
-  get otherValue() { return Math.abs((this.isVert ? 0 : 1) - this._otherValue);}
+  get otherValue() { return Math.abs(this.getOrientationValue([0, 1]) - this._otherValue);}
 
   set otherValue(otherValue) { this._otherValue = otherValue; }
 
@@ -84,7 +84,8 @@ class SliderLayer {
     const dims = this.getOrientationPair(this.handleDims);
     // dims seem like they are the wrong way round, but they aren't
     // because the handle is perpendicular to the main direction
-    const longPos = this.value * this.longLength - dims[1] / 2;
+    const longValue = Math.abs(this.getOrientationValue([1, 0]) - this.value);
+    const longPos = longValue * this.longLength - dims[1] / 2;
     // similar deal with the invert here...
     const shortPos = this.otherValue * this.shortLength - dims[0] / 2;
     const tl = new Point(...this.getOrientationPair([shortPos, longPos]));
@@ -136,25 +137,24 @@ class SliderPrecision {
     this.container.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d');
 
-    {
+    this.layers = [];
+    const orientations = this.getOrientationPair(['vert', 'horz']);
+    this.layers = [
+      { orientation: orientations[0], modValue: 0, value: 0.5, rgb: [43, 156, 212] },
+      { orientation: orientations[1], modValue: 1, value: 0.5, rgb: [43, 212, 156] },
+      { orientation: orientations[1], modValue: 2, value: 0.5, rgb: [249, 182, 118] },
+    ].map((opts, i) => {
 
-      const orientations = this.getOrientationPair(['vert', 'horz']);
-      this.layers = [
-        { orientation: orientations[0], modValue: 0, value: 0.5, rgb: [43, 156, 212] },
-        { orientation: orientations[1], modValue: 1, value: 0.5, rgb: [43, 212, 156] },
-        { orientation: orientations[1], modValue: 2, value: 0.5, rgb: [249, 182, 118] },
-      ].map((opts, i) => {
-        const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
-        if (i === 0) {
-          layer.active = true;
-          layer.alwaysVisible = true;
-          layer.addValueListener(value => {
-            this.layers.slice(1).forEach(l => l.otherValue = value);
-          });
-        }
-        return layer;
-      });
-    }
+      const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
+      layer.addValueListener(value => { this.updateOutput(); });
+
+      if (i === 0) {
+        layer.active = true;
+        layer.alwaysVisible = true;
+        layer.addValueListener(value => this.layers.slice(1).forEach(l => l.otherValue = value));
+      }
+      return layer;
+    });
 
     const hammer = new Hammer(this.canvas);
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
@@ -195,11 +195,21 @@ class SliderPrecision {
 
   set outputElement(element) {
     this.output = element;
+    this.updateOutput();
   }
 
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.layers.forEach(l => l.render());
+  }
+
+  get value() {
+    const values = this.layers.map(l => l.value);
+    return values.reduce((v, p) => v + p);
+  }
+
+  updateOutput() {
+    if (this.output !== undefined) { this.output.value = this.value; }
   }
 }
 
