@@ -12,7 +12,7 @@ class SliderLayer {
     this.orientation = orientation;
     this.value = 0.25;
     this.modValue = modValue;
-    this._active = false;
+    this.active = false;
     this.grabbed = false;
     this._handleDims = [80, 40];
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
@@ -20,12 +20,10 @@ class SliderLayer {
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const userPoint = this.getRelativePoint(event);
       this.grabbed = this.active && this.handleRect.contains(userPoint);
-      this.render();
     });
 
     Hammer.on(document.body, 'mouseup touchend', event => {
       this.grabbed = false;
-      this.render();
     });
 
     const hammer = new Hammer(this.canvas);
@@ -38,10 +36,8 @@ class SliderLayer {
       const userPos = userPoint[axis];
       const absValue = axis === 'y' ? this.canvas.height - userPos : userPos;
       this.value = absValue / this.longLength;
-      this.render();
     });
 
-    this.render();
   }
 
   getRelativePoint(event) {
@@ -56,13 +52,6 @@ class SliderLayer {
   get handleDims() { return this.getOrientationPair(this._handleDims); }
 
   get isVert() { return this.orientation === 'vert'; }
-
-  get active() { return this._active; }
-
-  set active(active) {
-    this._active = active;
-    this.render();
-  }
 
   getOrientationPair(pair) {
     const clone = pair.slice();
@@ -85,12 +74,12 @@ class SliderLayer {
   }
 
   render() {
-    if (!this.active) { return; }
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    const opacity = this.active ? 1.0 : 0.1;
+    // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.save();
 
     // line
-    this.ctx.fillStyle = '#000';
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
     const thickness = 2;
     const halfThick = thickness / 2;
     const tl = new Point(...this.getOrientationPair([this.shortLength / 2 - halfThick, 0]));
@@ -99,8 +88,7 @@ class SliderLayer {
     this.ctx.fillRect(...lineRect.drawRect);
 
     // handle
-    const opacity = this.grabbed ? 0.8 : 0.5;
-    this.ctx.fillStyle = `rgba(43, 156, 212, ${opacity})`;
+    this.ctx.fillStyle = `rgba(43, 156, 212, ${opacity * (this.grabbed ? 0.8 : 0.5)})`;
     this.ctx.fillRect(...this.handleRect.drawRect);
     this.ctx.restore();
   }
@@ -136,6 +124,12 @@ class SliderPrecision {
         return layer;
       });
     }
+
+    const hammer = new Hammer(this.canvas);
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
+    hammer.on('hammer.input', event => this.render());
+
+    this.render();
   }
 
   get activeLayer() { return this.layers.find(l => l.active); }
@@ -155,6 +149,11 @@ class SliderPrecision {
 
   set outputElement(element) {
     this.output = element;
+  }
+
+  render() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.layers.forEach(l => l.render());
   }
 }
 
