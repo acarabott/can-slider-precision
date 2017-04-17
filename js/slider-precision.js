@@ -18,12 +18,8 @@ class SliderLayer {
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
-      const isTouch = event.type.includes('touch');
-      const getFrom = isTouch ? event.touches.item(event.touches.length - 1) : event;
-      const bb = this.canvas.getBoundingClientRect();
-      const x = constrain(getFrom.clientX - bb.left, 0, this.canvas.width);
-      const y = constrain(getFrom.clientY - bb.top, 0, this.canvas.height);
-      this.grabbed = this.active && this.handleRect.contains(new Point(x, y));
+      const userPoint = this.getRelativePoint(event);
+      this.grabbed = this.active && this.handleRect.contains(userPoint);
       this.render();
     });
 
@@ -36,10 +32,25 @@ class SliderLayer {
 
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
     hammer.on('panmove', event => {
-      console.log(event);
+      if (!this.active) { return; }
+      const userPoint = this.getRelativePoint(event.srcEvent);
+      const axis = this.getOrientationValue(['y', 'x']);
+      const userPos = userPoint[axis];
+      const absValue = axis === 'y' ? this.canvas.height - userPos : userPos;
+      this.value = absValue / this.longLength;
+      this.render();
     });
 
     this.render();
+  }
+
+  getRelativePoint(event) {
+    const isTouch = event.type.includes('touch');
+    const getFrom = isTouch ? event.touches.item(event.touches.length - 1) : event;
+    const bb = this.canvas.getBoundingClientRect();
+    const x = constrain(getFrom.clientX - bb.left, 0, this.canvas.width);
+    const y = constrain(getFrom.clientY - bb.top, 0, this.canvas.height);
+    return new Point(x, y);
   }
 
   get handleDims() { return this.getOrientationPair(this._handleDims); }
@@ -63,9 +74,12 @@ class SliderLayer {
   }
 
   get handleRect() {
-    const longPos = this.value * this.longLength;
+    const value = this.getOrientationValue([1 - this.value, this.value]);
+    const dims = this.getOrientationPair(this.handleDims);
+    // dims seem like they are the wrong way round, but they aren't
+    const longPos = value * this.longLength - dims[1] / 2;
     const otherValue = 0.5;
-    const shortPos = otherValue * this.shortLength - this.getOrientationValue(this.handleDims) / 2;
+    const shortPos = otherValue * this.shortLength - dims[0] / 2;
     const tl = new Point(...this.getOrientationPair([shortPos, longPos]));
     return new Rect(tl, tl.add(...this.handleDims));
   }
