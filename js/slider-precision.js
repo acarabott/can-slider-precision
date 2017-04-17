@@ -228,29 +228,25 @@ class SliderPrecision {
   }
 
   getPrecision(mod) {
-    return 1 - Math.floor(Math.log10(this.max - this.min)) + mod;
+    return 1 - Math.floor(Math.log10(this.range)) + mod;
   }
 
   constrainToRange(value) {
     return Math.max(this.min, Math.min(value, this.max));
   }
 
-  get value() {
-    const range = this.max - this.min;
-    const mainValue = this.layers[0].value * range + this.min;
-    const mainPrecision = this.getPrecision(this.layers[0].modValue);
-    const mainRounded = this.constrainToRange(this.round(mainValue, mainPrecision));
+  get range() { return this.max - this.min; }
 
-    const adjustments = this.layers.slice(1).map((l, i) => {
-      const precision = this.getPrecision(l.modValue);
-      const subRange = Math.pow(10, -precision) * 10;
-      const scaled = (l.value - 0.5) * 2 * subRange;
+  get value() {
+    const scaled = this.layers.map((layer, i) => {
+      const isMain = i === 0;
+      const precision = this.getPrecision(i);
+      const range = isMain ? this.range : Math.pow(10, -precision) * 10 * 2;
+      const scaled = layer.value * range + (isMain ? this.min : -(range / 2));
       const rounded = this.round(scaled, precision);
       return rounded;
     });
-    const adjustment = adjustments.reduce((c, p) => c + p);
-
-    return this.constrainToRange(mainRounded + adjustment);
+    return this.constrainToRange(scaled.reduce((c, p) => c + p));
   }
 
   get precisionRounding() {
