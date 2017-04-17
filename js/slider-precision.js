@@ -210,9 +210,8 @@ class SliderPrecision {
       const isTouch = event.type === 'touchstart';
       const getFrom = isTouch ? event.touches[event.touches.length - 1] : event;
       const point = this.getInputPointFromEvent(getFrom);
-      // const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
-      // this.active = handleRect.contains(point);
-      this.active = true;
+      const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
+      this.active = handleRect.contains(point);
       this.render();
     });
 
