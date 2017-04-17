@@ -201,8 +201,16 @@ class SliderPrecision {
       if (!this.modButtons.some(mb => mb.key === event.key)) { return; }
       this.modButtons.forEach(mb => { if (mb.key !== event.key) { mb.deactivate(); } });
       this.render();
+      this.updateCursor();
     });
 
+    Hammer.on(this.canvas, 'mouseenter', event => {
+      this.updateCursor();
+    });
+
+    Hammer.on(this.canvas, 'mouseleave', event => {
+      this.canvas.style.cursor = 'normal';
+    });
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       if (event.target !== this.canvas) { return; }
@@ -243,6 +251,12 @@ class SliderPrecision {
     this.canvasHammer.on('press', event => {});
     this.canvasHammer.on('doubletap', event => {});
 
+  }
+
+  updateCursor() {
+    const fromOrientation = this.getOrientationValue(['row', 'col']);
+    const fromAdjusting = this.getReversedPairIf(this.adjusting, fromOrientation);
+    this.canvas.style.cursor = `${fromAdjusting[0]}-resize`;
   }
 
   getButtonStep(modValue) {
