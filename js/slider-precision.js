@@ -5,60 +5,6 @@ function constrain(val, min, max) {
   return Math.max(min, Math.min(val, max));
 }
 
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  gte(point) { return this.x >= point.x && this.y >= point.y; }
-  lte(point) { return this.x <= point.x && this.y <= point.y; }
-
-  *[Symbol.iterator]() { yield this.x; yield this.y; }
-
-  toString() { return `${this.x.toFixed(0)}, ${this.y.toFixed(0)}`; }
-
-  subtract(pointOrX, y) {
-    const args = pointOrX instanceof Point
-      ? [this.x - pointOrX.x, this.y - pointOrX.y]
-      : [this.x - pointOrX, this.y - y];
-    return new Point(...args);
-  }
-
-  add(pointOrX, y) {
-    const args = pointOrX instanceof Point
-      ? [this.x + pointOrX.x, this.y + pointOrX.y]
-      : [this.x + pointOrX, this.y + y];
-    return new Point(...args);
-  }
-}
-
-class Rect {
-  constructor(x, y, width, height) {
-    if (x instanceof Point) {
-      this.tl = x;
-      this.br = y;
-    }
-    else {
-      this.tl = new Point(x, y);
-      this.br = new Point(x + width, y + height);
-    }
-  }
-
-  get tr() { return new Point(this.br.x, this.tl.y); }
-  get bl() { return new Point(this.tl.x, this.br.y); }
-
-  get width() { return this.br.x - this.tl.x; }
-  get height() { return this.br.y - this.tl.y; }
-  get drawRect() { return [...this.tl, this.width, this.height]; }
-
-  contains(point) { return point.gte(this.tl) && point.lte(this.br); }
-
-  toString() {
-    return `${this.tl}, ${this.br}`;
-  }
-}
-
 class ModButton {
   constructor(key, modValue, unicode, step, width, height) {
     this.key = key;
@@ -249,11 +195,10 @@ class SliderPrecision {
 
   }
 
-  cursorInsideHandle(event) {
+  cursorInsideHandle(event, handleRect) {
     const isTouch = event.type === 'touchstart';
     const getFrom = isTouch ? event.touches[event.touches.length - 1] : event;
     const point = this.getInputPointFromEvent(getFrom);
-    const handleRect = this.getHandleRect(this.valuePoint, ...this.handleDims);
     return handleRect.contains(point);
   }
 
