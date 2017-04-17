@@ -59,7 +59,7 @@ class Rect {
   }
 }
 
-class ModKey {
+class ModButton {
   constructor(key, modValue, unicode, step, width, height) {
     this.key = key;
     this.modValue = modValue;
@@ -72,6 +72,7 @@ class ModKey {
     this.active = false;
     this._step = step;
     this.isTouch = window.ontouchstart !== undefined;
+    this.value = 0;
 
     const changeActionFactory = down => {
       return event => {
@@ -190,7 +191,7 @@ class SliderPrecision {
       { key:    'Meta', mod: 2, unicode: '\u2318' }
     ].forEach((o, i) => {
       const step = this.getButtonStep(o.mod);
-      const mk = new ModKey(o.key, o.mod, o.unicode, step, 50, 50);
+      const mk = new ModButton(o.key, o.mod, o.unicode, step, 50, 50);
       if (i === 0) { mk.activate(); }
       this.modButtons.push(mk);
       this.buttonContainer.appendChild(mk.canvas);
@@ -199,6 +200,7 @@ class SliderPrecision {
     document.addEventListener('keydown', event => {
       if (!this.modButtons.some(mb => mb.key === event.key)) { return; }
       this.modButtons.forEach(mb => { if (mb.key !== event.key) { mb.deactivate(); } });
+      this.updateOutput();
       this.render();
       this.updateCursor();
     });
@@ -265,8 +267,8 @@ class SliderPrecision {
     return SliderPrecision.getStepString(this.getPrecision() + modValue);
   }
 
-  updateButtonStep(modKey) {
-    modKey.step = this.getButtonStep(modKey.modValue);
+  updateButtonStep(modButton) {
+    modButton.step = this.getButtonStep(modButton.modValue);
   }
 
   updateAllButtonsText() {
@@ -322,14 +324,27 @@ class SliderPrecision {
   }
 
   get precisionRounding() {
-    return this.getPrecision(this.activeButton.modValue);
+    const active = this.modButtons.filter(mb => mb.active || mb.value !== 0.0);
+    const modValues = active.map(mb => mb.modValue);
+    return this.getPrecision(Math.max(...modValues));
   }
 
   get value() {
-    const outputRange = this._valueMax - this._valueMin;
-    const scaled = (this._valueMin + (this.valueNorm * outputRange));
-    // TODO take into account the adjustment
-    return this.round(scaled, this.precisionRounding);
+    const values = this.modButtons.map(mb => mb.value);
+    return values.reduce((v, p) => v + p, 0);
+    // return 10;
+  }
+
+  getModValue(modButton, isMain) {
+    const directions = this.getOrientationValue(['y', 'x']);
+    const norm = this.valuePoint[directions[isMain ? 0 : 1]];
+    const precision = this.getPrecision(modButton.modValue);
+    const adjustVal = Math.pow(10, -precision) * 10;
+    const min = isMain ? this._valueMin : -adjustVal;
+    const max = isMain ? this._valueMax : adjustVal;
+    const outputRange = max - min;
+    const scaled = min + (norm * outputRange);
+    return this.round(scaled, precision);
   }
 
   get valueRender() {
@@ -346,6 +361,23 @@ class SliderPrecision {
     this._valueMax = v;
     this.updateOutput();
     this.updateAllButtonsText();
+  }
+
+  updateOutput() {
+    this.modButtons.forEach((mb, i) => {
+      if (mb.active) { mb.value = this.getModValue(mb, i === 0); }
+    });
+    if (this.output !== undefined) { this.output.value = this.valueRender; }
+  }
+
+  appendTo(domNode) {
+    domNode.appendChild(this.container);
+    this.render();
+  }
+
+  setOutput(domNode) {
+    this.output = domNode;
+    this.updateOutput();
   }
 
   render() {
@@ -394,20 +426,6 @@ class SliderPrecision {
     }
 
     ctx.restore();
-  }
-
-  updateOutput() {
-    if (this.output !== undefined) { this.output.value = this.valueRender; }
-  }
-
-  appendTo(domNode) {
-    domNode.appendChild(this.container);
-    this.render();
-  }
-
-  setOutput(domNode) {
-    this.output = domNode;
-    this.updateOutput();
   }
 }
 
