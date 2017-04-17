@@ -6,7 +6,7 @@ function constrain(val, min, max) {
 }
 
 class SliderLayer {
-  constructor(canvas, orientation, modValue) {
+  constructor(canvas, orientation, modValue, rgb) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d');
     this.orientation = orientation;
@@ -14,9 +14,10 @@ class SliderLayer {
     this.valueActions = [];
     this.otherValue = 0.5;
     this.modValue = modValue;
+    this.rgb = rgb;
     this.active = false;
     this.grabbed = false;
-    this._handleDims = [80, 40];
+    this._handleDims = [80, 40 / (modValue + 1)];
     [this.shortLength, this.longLength] = this.getOrientationPair(['width', 'height']).map(s => this.canvas[s]);
 
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
@@ -101,7 +102,7 @@ class SliderLayer {
     this.ctx.fillRect(...lineRect.drawRect);
 
     // handle
-    this.ctx.fillStyle = `rgba(43, 156, 212, ${opacity * (this.grabbed ? 0.8 : 0.5)})`;
+    this.ctx.fillStyle = `rgba(${this.rgb.join(',')}, ${opacity * (this.grabbed ? 0.8 : 0.5)})`;
     this.ctx.fillRect(...this.handleRect.drawRect);
     this.ctx.restore();
   }
@@ -126,13 +127,14 @@ class SliderPrecision {
     this.ctx = this.canvas.getContext('2d');
 
     {
+
       const orientations = this.getOrientationPair(['vert', 'horz']);
       this.layers = [
-        { orientation: orientations[0], modValue: 0, value: 0.5 },
-        { orientation: orientations[1], modValue: 1, value: 0.5 },
-        { orientation: orientations[1], modValue: 2, value: 0.5 },
+        { orientation: orientations[0], modValue: 0, value: 0.5, rgb: [43, 156, 212] },
+        { orientation: orientations[1], modValue: 1, value: 0.5, rgb: [43, 212, 156] },
+        { orientation: orientations[1], modValue: 2, value: 0.5, rgb: [249, 182, 118] },
       ].map((opts, i) => {
-        const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue);
+        const layer = new SliderLayer(this.canvas, opts.orientation, opts.modValue, opts.rgb);
         if (i === 0) {
           layer.active = true;
           layer.addValueListener(value => {
@@ -147,6 +149,21 @@ class SliderPrecision {
     const hammer = new Hammer(this.canvas);
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
     hammer.on('hammer.input', event => this.render());
+
+    document.addEventListener('keydown', event => {
+      // getting idx, can swap this out
+      const num = parseInt(event.key, 10);
+      if (!Number.isFinite(num)) { return; }
+      const idx = num - 1;
+      // end getting idx
+
+      if (idx >= this.layers.length) { return; }
+      const grabbing = this.layers.find(l => l.active).grabbed;
+      this.layers.forEach(l => l.active = false);
+      this.layers[idx].active = true;
+      this.layers[idx].grabbed = grabbing;
+      this.render();
+    });
 
     this.render();
   }
