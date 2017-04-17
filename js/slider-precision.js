@@ -332,7 +332,6 @@ class SliderPrecision {
   get value() {
     const values = this.modButtons.map(mb => mb.value);
     return values.reduce((v, p) => v + p, 0);
-    // return 10;
   }
 
   getModValue(modButton, isMain) {
