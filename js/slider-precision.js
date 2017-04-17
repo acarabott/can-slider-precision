@@ -100,8 +100,6 @@ class SliderLayer {
     const thickness = 2;
     const halfThick = thickness / 2;
     const tl = new Point(...this.getOrientationPair([this.otherValue * this.shortLength - halfThick, 0]));
-    console.log("this.shortLength:", this.shortLength);
-    console.log("this.longLength:", this.longLength);
     const dims = this.getOrientationPair([thickness, this.longLength]);
     const lineRect = new Rect(tl, tl.add(...dims));
     this.ctx.fillRect(...lineRect.drawRect);
