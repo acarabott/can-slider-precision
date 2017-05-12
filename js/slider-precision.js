@@ -99,8 +99,8 @@ class SliderLayer {
 
     // line
     this.ctx.fillStyle = `rgba(0, 0, 0, ${this.alwaysVisible || this.active ? 1.0 : 0})`;
-    const thickness = 2;
-    const halfThick = thickness / 2;
+    const thickness = 1;
+    const halfThick = 1;
     const tl = new Point(...this.getOrientationPair([this.otherValue * this.shortLength - halfThick, 0]));
     const dims = this.getOrientationPair([thickness, this.longLength]);
     const lineRect = new Rect(tl, tl.add(...dims));
@@ -109,13 +109,15 @@ class SliderLayer {
     // handle
     const handleOpacity = this.active
       ? this.grabbed
-        ? 0.8
-        : 0.5
+        ? 0.9
+        : 0.8
       : this.alwaysVisible
-        ? 0.8
-        : 0.3;
+        ? 0.9
+        : 0.6;
     this.ctx.fillStyle = `rgba(${this.rgb.join(',')}, ${handleOpacity})`;
     this.ctx.fillRect(...this.handleRect.drawRect);
+    this.ctx.strokeStyle = `rgba(0, 0, 0, ${handleOpacity})`;
+    this.ctx.strokeRect(...this.handleRect.drawRect);
     this.ctx.restore();
   }
 }
