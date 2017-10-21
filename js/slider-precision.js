@@ -1,3 +1,5 @@
+/* global Hammer, Point, Rect */
+
 // prevent mobile scrolling
 document.ontouchmove = function(event){ event.preventDefault(); };
 
@@ -25,10 +27,12 @@ class SliderLayer {
     Hammer.on(this.canvas, 'mousedown touchstart', event => {
       const userPoint = this.getRelativePoint(event);
       this.grabbed = this.active && this.handleRect.contains(userPoint);
+      this.render();
     });
 
     Hammer.on(document.body, 'mouseup touchend', event => {
       this.grabbed = false;
+      this.render();
     });
 
     const hammer = new Hammer(this.canvas);
@@ -94,11 +98,11 @@ class SliderLayer {
   }
 
   render() {
-    const opacity = this.active ? 1.0 : 0.0;
+    const opacity = this.alwaysVisible || this.active ? 1.0 : 0.1;
     this.ctx.save();
 
     // line
-    this.ctx.fillStyle = `rgba(0, 0, 0, ${this.alwaysVisible || this.active ? 1.0 : 0})`;
+    this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
     const thickness = 1;
     const halfThick = 1;
     const tl = new Point(...this.getOrientationPair([this.otherValue * this.shortLength - halfThick, 0]));
@@ -108,12 +112,8 @@ class SliderLayer {
 
     // handle
     const handleOpacity = this.active
-      ? this.grabbed
-        ? 0.9
-        : 0.8
-      : this.alwaysVisible
-        ? 0.9
-        : 0.6;
+      ? 0.95
+      : 0.3;
     this.ctx.fillStyle = `rgba(${this.rgb.join(',')}, ${handleOpacity})`;
     this.ctx.fillRect(...this.handleRect.drawRect);
     this.ctx.strokeStyle = `rgba(0, 0, 0, ${handleOpacity})`;
@@ -123,7 +123,7 @@ class SliderLayer {
 }
 
 class SliderPrecision {
-  constructor(orientation, longLength = 400, shortLength = 200) {
+  constructor(orientation, longLength = 800, shortLength = 400) {
     this.orientation = orientation;
 
     this.container = document.createElement('div');
@@ -171,6 +171,7 @@ class SliderPrecision {
     hammer.on('hammer.input', event => this.render());
 
     document.addEventListener('keydown', event => {
+      // event.preventDefault();
       // getting idx, can swap this out
       const num = parseInt(event.key, 10);
       if (!Number.isFinite(num)) { return; }
@@ -184,6 +185,8 @@ class SliderPrecision {
       this.layers[idx].grabbed = grabbing;
       this.render();
     });
+
+    this.valueListeners = [];
 
     this.render();
   }
@@ -272,13 +275,19 @@ class SliderPrecision {
   }
 
   updateOutput() {
+    this.valueListeners.forEach(vl => vl(this.value));
     if (this.output !== undefined) { this.output.value = this.valueRender; }
+  }
+
+  addValueListener(func) {
+    this.valueListeners.push(func);
   }
 }
 
 function createOutput(input, parent = document.body) {
   const output = document.createElement('input');
   output.classList.add('output');
+  output.style.width = input.canvas.width;
   parent.appendChild(output);
   input.outputElement = output;
 }
@@ -288,15 +297,54 @@ const box = document.getElementById('container');
 const vert = new SliderPrecision('vert');
 
 vert.min = 0;
-vert.max = 100;
+vert.max = 360;
 
-vert.appendTo(box);
 createOutput(vert, box);
+vert.appendTo(box);
 
-const horz = new SliderPrecision('horz');
-horz.appendTo(box);
-createOutput(horz, box);
+// const horz = new SliderPrecision('horz');
+// horz.appendTo(box);
+// createOutput(horz, box);
 
+{
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
 
-// approaches
-// 2. vertical slider
+  canvas.width = 800;
+  canvas.height = 800;
+  document.body.appendChild(canvas);
+
+  function draw(angle) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const size = 356;
+    { // blue square
+      ctx.save();
+      ctx.fillStyle = 'rgba(43, 156, 212, 1.0)';
+
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(angle * Math.PI / 180);
+      const x = -(size / 2);
+      const y = -(size / 2);
+      ctx.fillRect(x, y, size, size);
+      ctx.restore();
+    }
+
+    { // target
+      const targetAngle = 123.5;
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(targetAngle * Math.PI / 180);
+
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      const x = -(size / 2);
+      const y = -(size / 2);
+      ctx.strokeRect(x, y, size, size);
+      ctx.restore();
+    }
+  }
+
+  vert.addValueListener(value => draw(value));
+
+  draw(vert.value);
+}

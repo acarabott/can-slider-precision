@@ -10,6 +10,7 @@
 
 body {
   font-family: Lato, 'Helvetica Neue', Helvetica;
+  font-weight: 200;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -33,13 +34,14 @@ h1 {
 
 canvas {
   margin: 0 auto;
-  display: block;
-  border: 1px black solid;
+  display: inline-block;
+  /*border*/: 1px black solid;
 }
 
 #container {
-  width: 50vw;
-  margin: 5vh auto;
+  width: 25vw;
+  margin: 5vh 5vw;
+  display: inline-block;
 }
 
 .slider {
@@ -49,8 +51,14 @@ canvas {
 
 .output {
   display: block;
-  margin: 20px auto;
+  /*display: none;*/
+  /*margin: 20px auto;*/
   border: 1px rgb(232, 232, 232) solid;
+  border: none;
+  text-align: center;
+  font-family: Lato;
+  font-size: 3em;
+  font-weight: 200;
 }
 
 .buttons {
@@ -64,3 +72,4 @@ canvas {
   display: inline-block;
   margin: 5px;
 }
+
