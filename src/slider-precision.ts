@@ -1,5 +1,6 @@
 import { Point } from "./Point";
 import { Rect } from "./Rect";
+import "hammerjs";
 
 // prevent mobile scrolling
 document.ontouchmove = function (event) {
