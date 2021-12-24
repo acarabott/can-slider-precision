@@ -1,4 +1,5 @@
-/* global Hammer, Point, Rect */
+import { Point } from "./Point";
+import { Rect } from "./Rect";
 
 // prevent mobile scrolling
 document.ontouchmove = function (event) {
