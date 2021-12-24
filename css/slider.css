@@ -1,24 +1,28 @@
 * {
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
 }
 
 body {
-  font-family: Lato, 'Helvetica Neue', Helvetica;
+  font-family: Lato, "Helvetica Neue", Helvetica;
   font-weight: 200;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 200;
 }
-
 
 :root {
   --my-blue: rgb(43, 156, 212);
@@ -35,41 +39,36 @@ h1 {
 canvas {
   margin: 0 auto;
   display: inline-block;
-  /*border*/: 1px black solid;
+  /*border: 1px black solid */
 }
 
-#container {
+#main {
+  display: flex;
+}
+
+#left,
+#right {
   width: 25vw;
+  height: 80vh;
   margin: 5vh 5vw;
-  display: inline-block;
 }
 
 .slider {
-  margin: 0 auto;
-  display: block;
+  display: inline-block;
 }
 
 .output {
-  display: block;
-  /*display: none;*/
-  /*margin: 20px auto;*/
+  width: 100%;
+  margin: 0;
   border: 1px rgb(232, 232, 232) solid;
   border: none;
   text-align: center;
   font-family: Lato;
-  font-size: 3em;
+  font-size: 8vh;
   font-weight: 200;
 }
 
-.buttons {
-  display: inline-block;
-  margin: 10px auto;
+p {
+  font-size: 2vh;
   width: 100%;
-  text-align: center;
 }
-
-.buttons canvas {
-  display: inline-block;
-  margin: 5px;
-}
-

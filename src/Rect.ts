@@ -1,12 +1,22 @@
 import { Point } from "./Point";
 export class Rect {
-  constructor(x, y, width, height) {
-    if (x instanceof Point) {
+  public tl: Point;
+  public br: Point;
+
+  constructor(x: Point | number, y: Point | number, width?: number, height?: number) {
+    if (x instanceof Point && y instanceof Point) {
       this.tl = x;
       this.br = y;
-    } else {
+    } else if (
+      typeof x === "number" &&
+      typeof y === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
       this.tl = new Point(x, y);
       this.br = new Point(x + width, y + height);
+    } else {
+      throw new Error("this should never happen");
     }
   }
 
@@ -23,14 +33,14 @@ export class Rect {
   get height() {
     return this.br.y - this.tl.y;
   }
-  get drawRect() {
-    return [...this.tl, this.width, this.height];
+  get drawRect(): [number, number, number, number] {
+    return [this.tl.x, this.tl.y, this.width, this.height];
   }
   get copy() {
     return new Rect(this.tl, this.br);
   }
 
-  contains(point) {
+  contains(point: Point) {
     return point.gte(this.tl) && point.lte(this.br);
   }
 

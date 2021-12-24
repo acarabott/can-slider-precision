@@ -1,13 +1,16 @@
 export class Point {
-  constructor(x, y) {
+  public x: number;
+  public y: number;
+
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
 
-  gte(point) {
+  gte(point: Point) {
     return this.x >= point.x && this.y >= point.y;
   }
-  lte(point) {
+  lte(point: Point) {
     return this.x <= point.x && this.y <= point.y;
   }
 
@@ -20,16 +23,16 @@ export class Point {
     return `${this.x.toFixed(0)}, ${this.y.toFixed(0)}`;
   }
 
-  subtract(pointOrX, y) {
-    const args =
+  subtract(pointOrX: Point | number, y: number) {
+    const args: [number, number] =
       pointOrX instanceof Point
         ? [this.x - pointOrX.x, this.y - pointOrX.y]
         : [this.x - pointOrX, this.y - y];
     return new Point(...args);
   }
 
-  add(pointOrX, y) {
-    const args =
+  add(pointOrX: Point | number, y: number) {
+    const args: [number, number] =
       pointOrX instanceof Point
         ? [this.x + pointOrX.x, this.y + pointOrX.y]
         : [this.x + pointOrX, this.y + y];
