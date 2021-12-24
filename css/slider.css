@@ -13,6 +13,7 @@ body {
   font-weight: 200;
   overflow-x: hidden;
   overflow-y: auto;
+  height: 90%;
 }
 
 h1,
@@ -44,13 +45,15 @@ canvas {
 
 #main {
   display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: space-evenly;
 }
 
 #left,
 #right {
-  width: 25vw;
-  height: 80vh;
-  margin: 5vh 5vw;
+  width: 40%;
+  height: 100%;
 }
 
 .slider {
@@ -71,6 +74,7 @@ canvas {
 p {
   font-size: 2vh;
   width: 100%;
+  text-align: center;
 }
 
 button {

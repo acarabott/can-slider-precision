@@ -146,7 +146,6 @@ class SliderLayer {
 
   get handleRect() {
     const dims = this.getOrientationPair(this.handleDims);
-    console.log("dims:", dims);
     // dims seem like they are the wrong way round, but they aren't
     // because the handle is perpendicular to the main direction
     const longValue = Math.abs(this.getOrientationValue([1, 0]) - this.value);
@@ -256,7 +255,7 @@ class SliderPrecision {
     hammer.get("pan").set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
     hammer.on("hammer.input", (_event) => this.render());
 
-    document.addEventListener("keydown", (event) => {
+    document.body.addEventListener("keydown", (event) => {
       // event.preventDefault();
       // getting idx, can swap this out
       const num = parseInt(event.key, 10);
@@ -403,11 +402,11 @@ class SliderPrecision {
 }
 
 function createOutput(input: SliderPrecision, parent = document.body) {
-  const output = document.createElement("input");
+  const output = document.createElement("div");
   output.classList.add("output");
   parent.appendChild(output);
 
-  const updateOutput = () => (output.value = `${input.value}º`);
+  const updateOutput = () => (output.textContent = `${input.value.toFixed(1)}º`);
   input.addValueListener(updateOutput);
   updateOutput();
 }
@@ -441,6 +440,7 @@ updateShape();
   buttonParent.style.display = "flex";
   buttonParent.style.justifyContent = "space-between";
   buttonParent.style.width = "100%";
+  buttonParent.style.marginBottom = "1vh";
   [
     { key: 1, layer: 0, rgb: LAYER_COLORS[0] },
     { key: 2, layer: 1, rgb: LAYER_COLORS[1] },
@@ -461,8 +461,6 @@ updateShape();
   });
 }
 
-createOutput(vert, box);
-
 vert.appendTo(box);
 
 {
@@ -475,28 +473,31 @@ vert.appendTo(box);
   para.textContent = "Use the slider handles to align the blue square with the outline.";
   outputParent.appendChild(para);
 
+  createOutput(vert, outputParent);
+
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (ctx === null) {
     throw new Error("Could not create canvas context");
   }
 
-  canvas.width = 800;
-  canvas.height = 800;
   outputParent.appendChild(canvas);
 
-  window.addEventListener("resize", () => {
+  const resizeOutput = () => {
     const bounds = outputParent.getBoundingClientRect();
-    const size = bounds.width * 1.0;
+    const size = bounds.width;
     canvas.width = size;
     canvas.height = size;
     draw(ctx, vert.value);
-  });
+  };
+
+  window.addEventListener("resize", resizeOutput);
+  resizeOutput();
 
   function draw(ctx: CanvasRenderingContext2D, angle: number) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const size = canvas.width * 0.55;
+    const size = canvas.width * 0.5;
     {
       // blue square
       ctx.save();
