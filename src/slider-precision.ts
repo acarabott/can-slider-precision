@@ -417,15 +417,17 @@ if (box === null) {
   throw new Error("could not find container");
 }
 
-const bounds = box.getBoundingClientRect();
-let vert = new SliderPrecision(bounds.width, bounds.height * 0.9);
+let vert = new SliderPrecision(400, 800);
 vert.min = 0;
 vert.max = 360;
 
-window.addEventListener("resize", () => {
+const updateShape = () => {
   const bounds = box.getBoundingClientRect();
   vert.shape = [bounds.width, bounds.height * 0.9];
-});
+};
+
+window.addEventListener("resize", updateShape);
+updateShape();
 
 {
   const para = document.createElement("p");

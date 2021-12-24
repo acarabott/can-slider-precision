@@ -72,3 +72,10 @@ p {
   font-size: 2vh;
   width: 100%;
 }
+
+button {
+  width: 5vh;
+  height: 5vh;
+  border-radius: 0.5vh;
+  border: 1px black solid;
+}
