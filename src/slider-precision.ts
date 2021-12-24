@@ -7,9 +7,7 @@ document.ontouchmove = function (event) {
   event.preventDefault();
 };
 
-function constrain(val, min, max) {
-  return Math.max(min, Math.min(val, max));
-}
+const constrain = (val: number, min: number, max: number) => Math.max(min, Math.min(val, max));
 
 class SliderLayer {
   constructor(canvas, orientation, modValue, handleDims, rgb) {
