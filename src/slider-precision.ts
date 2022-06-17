@@ -9,6 +9,10 @@ document.ontouchmove = function (event) {
 
 const constrain = (val: number, min: number, max: number) => Math.max(min, Math.min(val, max));
 
+const isTouchEvent = (event: HammerInput["srcEvent"]): event is TouchEvent => {
+  return (event as TouchEvent).touches !== undefined;
+};
+
 type Orientation = "vert" | "horz";
 type Shape = [number, number];
 type RGB = [number, number, number];
@@ -89,10 +93,7 @@ class SliderLayer {
   }
 
   getRelativePoint(event: HammerInput["srcEvent"]) {
-    const touchEvent = event as TouchEvent;
-    const getFrom =
-      event instanceof TouchEvent ? touchEvent.touches.item(touchEvent.touches.length - 1) : event;
-
+    const getFrom = isTouchEvent(event) ? event.touches.item(event.touches.length - 1) : event;
     if (getFrom === null) {
       throw new Error("No touch for touch event");
     }
